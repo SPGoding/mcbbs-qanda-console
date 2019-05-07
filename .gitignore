@@ -33,3 +33,7 @@ testem.log
 # System Files
 .DS_Store
 Thumbs.db
+
+# Config Files
+/lib/config.json
+/lib/users.json
