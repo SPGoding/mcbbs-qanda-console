@@ -9,9 +9,9 @@ let rank: RankElement[]
 let rankBBCode = ''
 let rankTime = ''
 let registrationBBCode = ''
-let abandonedHeartBBCode = '';
+let abandonedHeartBBCode = ''
 
-(async function startup() {
+async function startup() {
     config = await loadConfig<Config>('config.json', { password: '', interal: 600000, port: 80 })
     users = await loadConfig<Users>('users.json', {})
 
@@ -20,18 +20,36 @@ let abandonedHeartBBCode = '';
 
     http
         .createServer(async (req, res) => {
-            if (req.url) {
-                res.setHeader('Content-Type', "image/png")
-                let html = '233'
-                res.end(html)
+            if (req.method === 'GET') {
+                if (req.url === '/rank.png') {
+                    res.writeHead(200, { 'Content-Type': 'image/png' })
+                    res.end('233') // TODO.
+                } else {
+                    res.writeHead(200, { 'Content-Type': 'text/html' })
+                    const html = '233'// TODO.
+                    res.end(html)
+                }
+            } else if (req.method === 'POST') {
+                if (req.url === '/add-user') {
+                    res.setHeader('Content-Type', "text/html")
+                } else if (req.url === '/del-user') {
+                    res.setHeader('Content-Type', "text/html")
+                } else if (req.url === '/edit-user') {
+                    res.setHeader('Content-Type', "text/html")
+                } else {
+                    res.writeHead(404, 'Resource Not Found', {'Content-Type': 'text/html'})
+                    res.end('<!doctype html><html><head><title>404</title></head><body>404: Resource Not Found</body></html>')
+                }
             }
         })
         .listen(config.port)
         .on('error', e => {
             console.error(e.message)
         })
-})()
+        console.log(`Server is running at localhost:${config.port}.`)
+}
 
+setImmediate(startup)
 
 async function updateInfo() {
     await updateUserInfo()
@@ -40,6 +58,7 @@ async function updateInfo() {
     registrationBBCode = getRegistrationBBCode()
     abandonedHeartBBCode = getAbandonedHeartBBCode()
     console.log(rankBBCode)
+    console.log(rankTime)
     console.log(registrationBBCode)
     console.log(abandonedHeartBBCode)
 }
@@ -124,4 +143,30 @@ function getAbandonedHeartBBCode() {
     }
 
     return getBBCodeOfTable(table)
+}
+
+async function addUser(uid: number, heartInitial?: number) {
+    const url = `http://www.mcbbs.net/?${uid}`
+    const webCode: string = await rp(url)
+    const user = getUserViaWebCode(webCode)
+
+    if (heartInitial !== undefined) {
+        user.heartInitial = heartInitial
+        user.heartAttained = user.heartPresent - user.heartInitial - user.heartAbandoned
+    }
+
+    users[uid] = user
+}
+
+function delUser(uid: number) {
+    delete users[uid]
+}
+
+function editUser(uid: number, heartInitial: number,
+    heartAbandoned: number, heartAbandonedLinks: string[], banned: boolean) {
+    const user = users[uid]
+    user.heartInitial = heartInitial
+    user.heartAbandoned = heartAbandoned
+    user.heartAbandonedLinks = heartAbandonedLinks
+    user.banned = banned
 }

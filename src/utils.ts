@@ -60,14 +60,14 @@ export function getUserViaWebCode(webCode: string, oldUser?: User): User {
             banned: false,
             heartAbandoned: 0,
             heartAbandonedLinks: [],
-            heartAttained: 0,
             heartInitial: heartPresent,
-            heartPresent: NaN,
-            username: ''
+            heartAttained: NaN, // Won't be inherited.
+            heartPresent: NaN, // Won't be inherited.
+            username: '' // Won't be inherited.
         }
     }
 
-    let { banned, heartAbandoned, heartAbandonedLinks, heartAttained, heartInitial } = oldUser
+    let { banned, heartAbandoned, heartAbandonedLinks, heartInitial } = oldUser
 
     return {
         username,
