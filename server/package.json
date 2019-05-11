@@ -12,7 +12,9 @@
         "fs-extra": "^7.0.1",
         "request": "^2.88.0",
         "request-promise-native": "^1.0.7",
-        "tslib": "^1.9.3"
+        "tslib": "^1.9.3",
+        "canvas": "^2.5.0",
+        "cookies": "^0.7.3"
     },
     "devDependencies": {
         "@types/fs-extra": "^5.1.0",

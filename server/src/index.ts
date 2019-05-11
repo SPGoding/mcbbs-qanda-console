@@ -2,7 +2,8 @@ import * as rp from 'request-promise-native'
 import * as http from 'http'
 import * as path from 'path'
 import { Canvas, loadImage } from 'canvas'
-import { loadConfig, Config, Users, RankElement, getUserViaWebCode, writeConfig, getBBCodeOfTable, Table, Row } from './utils'
+import { loadConfig, Config, RankElement, getUserViaWebCode, writeConfig, getBBCodeOfTable, Table, Row } from './utils'
+import { Users } from '../../utils/types'
 
 let config: Config = { password: '', interal: NaN, port: NaN }
 let users: Users = {}
@@ -90,7 +91,7 @@ function updateRankInfo() {
         rank.push({ uid: parseInt(uid), heart: user.heartAttained })
     }
     rank.sort((a: RankElement, b: RankElement) => b.heart - a.heart)
-    rankTime = new Date().toLocaleString()
+    rankTime = `数据统计于 ${new Date().toLocaleString()}`
 }
 
 async function drawRankTable() {

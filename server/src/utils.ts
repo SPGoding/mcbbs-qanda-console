@@ -1,24 +1,11 @@
 import * as fs from 'fs-extra'
 import * as path from 'path'
+import { User } from '../../utils/types'
 
 export interface Config {
     password: string,
     interal: number,
     port: number
-}
-
-export interface User {
-    username: string,
-    heartInitial: number,
-    heartAbandoned: number,
-    heartAbandonedLinks: string[],
-    heartPresent: number,
-    heartAttained: number,
-    banned: boolean
-}
-
-export interface Users {
-    [uid: number]: User
 }
 
 export interface RankElement {
