@@ -2,10 +2,10 @@
     "compileOnSave": false,
     "compilerOptions": {
         "baseUrl": "./",
-        "outDir": "./lib",
+        "outDir": "lib",
         "sourceMap": true,
         "declaration": false,
-        "module": "es2015",
+        "module": "commonjs",
         "moduleResolution": "node",
         "emitDecoratorMetadata": true,
         "experimentalDecorators": true,
@@ -18,5 +18,13 @@
             "es2018"
         ],
         "strictNullChecks": true
-    }
+    },
+    "references": [
+        {
+            "path": "client"
+        },
+        {
+            "path": "server"
+        }
+    ]
 }
