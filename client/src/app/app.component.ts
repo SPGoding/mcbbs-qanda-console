@@ -54,7 +54,7 @@ export class AppComponent implements OnInit {
     public abandonedHeartBBCode = '加载中…'
     public registrationBBCode = '加载中…'
     public users: UserArrayElement[] = []
-    public displayedColumns = ['uid', 'username', 'heartInitial', 'heartAbandoned', 'heartAbandonedLinks', 'heartPresent', 'heartAttained', 'banned', 'operations']
+    public displayedColumns = ['uid', 'username', 'heartInitial', 'heartAbandoned', /*'heartAbandonedLinks', */ 'heartPresent', 'heartAttained', 'banned', 'operations']
 
     public password = ''
     public toKeepLogin = false
@@ -77,7 +77,6 @@ export class AppComponent implements OnInit {
         await this.getAbandonedHeartBBCode()
         await this.getRegistrationBBCode()
         await this.getUsers()
-        console.log(this.users)
     }
 
     public async getAbandonedHeartBBCode() {
@@ -126,7 +125,7 @@ export class AppComponent implements OnInit {
         dialogRef.afterClosed().subscribe(async (result: EditUserInfo) => {
             if (result !== undefined && result.uid !== undefined && result.heartInitial !== undefined && result.heartAbandoned !== undefined && result.banned !== undefined) {
                 await this.request('POST', this.api.editUser,
-                    `password=${this.password}&uid=${result.uid}&heartInitial=${result.heartInitial}&heartAbandoned=${result.heartAbandoned}&heartAbandonedLinks=${result.heartAbandonedLinks}&banned=${result.banned}`
+                    `password=${this.password}&uid=${result.uid}&heartInitial=${result.heartInitial}&heartAbandoned=${result.heartAbandoned}&heartAbandonedLinks=&banned=${result.banned}`
                 )
                 await this.updateAll()
             }

@@ -5,7 +5,6 @@ export interface EditUserInfo {
     uid: string,
     heartInitial: number,
     heartAbandoned: number,
-    heartAbandonedLinks: string,
     banned: boolean
 }
 

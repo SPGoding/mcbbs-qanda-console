@@ -228,7 +228,9 @@ function updateRankInfo() {
     rank = []
     for (const uid in users) {
         const user = users[uid]
-        rank.push({ uid: parseInt(uid), heart: user.heartAttained })
+        if (!user.banned) {
+            rank.push({ uid: parseInt(uid), heart: user.heartAttained })
+        }        
     }
     rank.sort((a: RankElement, b: RankElement) => b.heart - a.heart)
     rankTime = `统计于 ${new Date().toLocaleString()}`
