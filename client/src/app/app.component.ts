@@ -168,6 +168,7 @@ export class AppComponent implements OnInit {
 
     public async deleteUser(user: UserArrayElement) {
         await this.request('POST', this.api.delUser, `password=${this.password}&uid=${user.uid}`)
+        await this.updateAll()
     }
 
     private async request(method: 'GET' | 'POST', api: string, message?: string | FormData) {
