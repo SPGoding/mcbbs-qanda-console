@@ -1,0 +1,16 @@
+<h1 mat-dialog-title>添加用户</h1>
+<div mat-dialog-content>
+  <mat-form-field>
+    <mat-label>用户 UID</mat-label>
+    <input matInput [(ngModel)]="data.uid">
+  </mat-form-field>
+  <mat-form-field>
+    <mat-label>起始爱心数量</mat-label>
+    <input matInput [(ngModel)]="data.heartInitial">
+    <mat-hint>留空将自动获取。</mat-hint>
+  </mat-form-field>
+</div>
+<div mat-dialog-actions>
+  <button mat-raised-button (click)="cancel()">取消</button>
+  <button mat-raised-button [mat-dialog-close]="data" color="primary" cdkFocusInitial>添加</button>
+</div>

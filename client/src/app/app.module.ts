@@ -5,12 +5,16 @@ import { AppComponent } from './app.component'
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations'
 import { AboutDialogComponent } from './about-dialog/about-dialog.component'
 import { FormsModule } from '@angular/forms'
-import { MatButtonModule, MatCardModule, MatCheckboxModule, MatDialogModule, MatDividerModule, MatFormFieldModule, MatIconModule, MatInputModule, MatMenuModule, MatToolbarModule } from '@angular/material';
+import { MatButtonModule, MatCardModule, MatCheckboxModule, MatDialogModule, MatDividerModule, MatFormFieldModule, MatIconModule, MatInputModule, MatMenuModule, MatPaginatorModule, MatTableModule, MatToolbarModule } from '@angular/material';
+import { AddUserDialogComponent } from './add-user-dialog/add-user-dialog.component';
+import { EditUserDialogComponent } from './edit-user-dialog/edit-user-dialog.component';
 
 @NgModule({
   declarations: [
     AppComponent,
-    AboutDialogComponent
+    AboutDialogComponent,
+    AddUserDialogComponent,
+    EditUserDialogComponent
   ],
   imports: [
     BrowserModule,
@@ -25,12 +29,16 @@ import { MatButtonModule, MatCardModule, MatCheckboxModule, MatDialogModule, Mat
     MatIconModule,
     MatInputModule,
     MatMenuModule,
+    MatPaginatorModule,
+    MatTableModule,
     MatToolbarModule
   ],
   providers: [],
   bootstrap: [AppComponent],
   entryComponents: [
-    AboutDialogComponent
+    AboutDialogComponent,
+    AddUserDialogComponent,
+    EditUserDialogComponent
   ]
 })
 export class AppModule { }

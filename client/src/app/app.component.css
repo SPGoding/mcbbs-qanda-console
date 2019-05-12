@@ -1,5 +1,5 @@
 mat-card {
-    max-width: 75%;
+    max-width: 90%;
     margin: 2em auto;
     text-align: center;
 }
@@ -16,4 +16,9 @@ mat-checkbox {
 
 .fullWidth {
     width: 100%;
+}
+
+table {
+    width: 90%;
+    margin: 16px auto;
 }

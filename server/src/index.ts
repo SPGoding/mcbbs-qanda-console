@@ -68,13 +68,23 @@ async function startup() {
                         }
                     }
                 } else if (req.method === 'POST') {
+                    if (req.url !== '/api/add-user' && req.url !== '/api/del-user' && req.url !== '/api/edit-user' && req.url !== '/api/login') {
+                        res.writeHead(404, 'Resource Not Found', { 'Content-Type': 'text/html' })
+                        res.end(getHtmlFromCode(404))
+                        return
+                    }
                     if (req.url === '/api/add-user') {
                         const data = await handlePost(req, res)
-                        if (data.uid) {
-                            if (data.heartInitial) {
-                                addUser(parseInt(data.uid as string), parseInt(data.heartInitial as string))
+                        if (!data.password || md5(data.password.toString()) !== config.password) {
+                            res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' })
+                            res.end(getHtmlFromCode(400))
+                            return
+                        }
+                        if (data.uid !== undefined) {
+                            if (data.heartInitial !== undefined) {
+                                await addUser(parseInt(data.uid as string), parseInt(data.heartInitial as string))
                             } else {
-                                addUser(parseInt(data.uid as string))
+                                await addUser(parseInt(data.uid as string))
                             }
                             res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' })
                             res.end(getHtmlFromCode(200))
@@ -84,7 +94,12 @@ async function startup() {
                         }
                     } else if (req.url === '/api/del-user') {
                         const data = await handlePost(req, res)
-                        if (data.uid) {
+                        if (!data.password || md5(data.password.toString()) !== config.password) {
+                            res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' })
+                            res.end(getHtmlFromCode(400))
+                            return
+                        }
+                        if (data.uid !== undefined) {
                             delUser(parseInt(data.uid as string))
                             res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' })
                             res.end(getHtmlFromCode(200))
@@ -94,12 +109,17 @@ async function startup() {
                         }
                     } else if (req.url === '/api/edit-user') {
                         const data = await handlePost(req, res)
-                        if (data.uid && data.heartInitial && data.heartAbandoned && data.heartAbandonedLinks && data.banned) {
+                        if (!data.password || md5(data.password.toString()) !== config.password) {
+                            res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' })
+                            res.end(getHtmlFromCode(400))
+                            return
+                        }
+                        if (data.uid !== undefined && data.heartInitial !== undefined && data.heartAbandoned !== undefined && data.banned !== undefined) {
                             editUser(
                                 parseInt(data.uid as string),
                                 parseInt(data.heartInitial as string),
                                 parseInt(data.heartAbandoned as string),
-                                data.heartAbandonedLinks as string[],
+                                (data.heartAbandonedLinks as string).split(/,/g),
                                 data.banned === 'true'
                             )
                             res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' })
@@ -117,9 +137,6 @@ async function startup() {
                             res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' })
                             res.end('E')
                         }
-                    } else {
-                        res.writeHead(404, 'Resource Not Found', { 'Content-Type': 'text/html' })
-                        res.end(getHtmlFromCode(404))
                     }
                 }
             })
@@ -319,5 +336,6 @@ function editUser(uid: number, heartInitial: number,
     user.heartAbandoned = heartAbandoned
     user.heartAbandonedLinks = heartAbandonedLinks
     user.banned = banned
+    user.heartAttained = user.heartPresent - user.heartInitial - user.heartAbandoned
     updateInfo(false)
 }
