@@ -1,11 +1,26 @@
 import * as fs from 'fs-extra'
 import * as path from 'path'
-import { User } from '../../utils/types'
 
 export interface Config {
     password: string,
     interal: number,
-    port: number
+    port: number,
+    host: string,
+    protocol: string
+}
+
+export interface User {
+    username: string,
+    heartInitial: number,
+    heartAbandoned: number,
+    heartAbandonedLinks: string[],
+    heartPresent: number,
+    heartAttained: number,
+    banned: boolean
+}
+
+export interface Users {
+    [uid: number]: User
 }
 
 export interface RankElement {
@@ -72,7 +87,7 @@ export function getBBCodeOfTable(table: Table) {
     const tableSuffix = '[/table][/align]'
     const rowPrefix = '[tr]'
     const rowSuffix = '[/tr]'
-    const dataPrefix = '[td] '
+    const dataPrefix = '[td]'
     const dataSuffix = '[/td]'
 
     let ans = `${tablePrefix}\n`

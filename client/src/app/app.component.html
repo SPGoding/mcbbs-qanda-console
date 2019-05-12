@@ -7,18 +7,53 @@
 
 <mat-menu #mqcMenu="matMenu">
   <button mat-menu-item (click)="openAboutDialog()">
-    <mat-icon>info</mat-icon>About
+    <mat-icon>info</mat-icon>关于
   </button>
 </mat-menu>
 
 <mat-card>
-  <div>
-    <h1>当前前十</h1>
-    <img src="/rank" />
+  <h1>管理</h1>
+  <div *ngIf="!isLoggedIn">
+    <mat-form-field>
+      <mat-label>密码（不是 MCBBS 帐号的密码）</mat-label>
+      <input class="fullWidth" matInput type="password" [(ngModel)]="password" />
+      <mat-hint *ngIf="failedToLogin">登录失败，请重试。</mat-hint>
+      <mat-hint *ngIf="!failedToLogin">您需要登录才能管理活动信息。</mat-hint>
+    </mat-form-field><br />
+    <mat-checkbox [(ngModel)]="toKeepLogin">保持登录</mat-checkbox><br />
+    <button mat-raised-button color="primary" (click)="login()">登录</button>
   </div>
+  <div *ngIf="isLoggedIn">
+    欢迎您，问答版版主。<br />
+    <button mat-raised-button color="primary" (click)="logout()">注销</button>
+  </div>
+</mat-card>
+<mat-card>
+  <h1>公示</h1>
   <div>
-    <h1>爱心放弃公示</h1>
-    <textarea matInput cdkTextareaAutosize cdkAutosizeMinRows="8" cdkAutosizeMaxRows="24" cols="36"
-    placeholder="Input command(s)" readonly [ngModel]="abandonedHeartBBCode"></textarea>
+    <h2>当前前十</h2>
+    <img [src]="api.rank" /><br />
+    <mat-form-field>
+      <mat-label>BBCode 代码</mat-label>
+      <input class="fullWidth" matInput readonly [value]="rankImageBBCode" />
+    </mat-form-field>
+  </div>
+  <mat-divider></mat-divider>
+  <div>
+    <h2>报名信息公示</h2>
+    <mat-form-field>
+      <mat-label>BBCode 代码</mat-label>
+      <textarea class="fullWidth" matInput cdkTextareaAutosize cdkAutosizeMinRows="8" cdkAutosizeMaxRows="24" readonly
+        [ngModel]="registrationBBCode"></textarea><br />
+    </mat-form-field><br />
+  </div>
+  <mat-divider></mat-divider>
+  <div>
+    <h2>爱心放弃公示</h2>
+    <mat-form-field>
+      <mat-label>BBCode 代码</mat-label>
+      <textarea class="fullWidth" matInput cdkTextareaAutosize cdkAutosizeMinRows="8" cdkAutosizeMaxRows="24" readonly
+        [ngModel]="abandonedHeartBBCode"></textarea><br />
+    </mat-form-field><br />
   </div>
 </mat-card>

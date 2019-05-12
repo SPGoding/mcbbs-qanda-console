@@ -1,8 +1,8 @@
 {
     "compileOnSave": false,
     "compilerOptions": {
-        "baseUrl": "./",
-        "outDir": "lib",
+        "baseUrl": "src",
+        "outDir": "dist",
         "sourceMap": true,
         "declaration": false,
         "module": "commonjs",

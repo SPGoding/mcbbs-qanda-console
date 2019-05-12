@@ -5,7 +5,7 @@ import { AppComponent } from './app.component'
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations'
 import { AboutDialogComponent } from './about-dialog/about-dialog.component'
 import { FormsModule } from '@angular/forms'
-import { MatButtonModule, MatButtonToggleModule, MatCardModule, MatDialogModule, MatIconModule, MatInputModule, MatMenuModule, MatSnackBarModule, MatToolbarModule } from '@angular/material';
+import { MatButtonModule, MatCardModule, MatCheckboxModule, MatDialogModule, MatDividerModule, MatFormFieldModule, MatIconModule, MatInputModule, MatMenuModule, MatToolbarModule } from '@angular/material';
 
 @NgModule({
   declarations: [
@@ -17,13 +17,14 @@ import { MatButtonModule, MatButtonToggleModule, MatCardModule, MatDialogModule,
     BrowserAnimationsModule,
     FormsModule,
     MatButtonModule,
-    MatButtonToggleModule,
     MatCardModule,
+    MatCheckboxModule,
     MatDialogModule,
+    MatDividerModule,
+    MatFormFieldModule,
     MatIconModule,
     MatInputModule,
     MatMenuModule,
-    MatSnackBarModule,
     MatToolbarModule
   ],
   providers: [],

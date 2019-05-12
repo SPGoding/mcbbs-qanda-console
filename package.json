@@ -2,7 +2,7 @@
     "name": "mcbbs-qanda-console",
     "version": "0.0.0",
     "scripts": {
-        "start": "node server/lib/index",
+        "start": "cd server && npm start",
         "build": "npm run build:client && npm run build:server",
         "build:client": "cd client && npm run build && cd ..",
         "build:server": "cd server && npm run build && cd ..",
@@ -14,8 +14,11 @@
         "test": "echo 'Error: no test specified'"
     },
     "private": true,
-    "dependencies": {},
+    "dependencies": {
+        "md5": "^2.2.1"
+    },
     "devDependencies": {
+        "@types/md5": "^2.1.33",
         "ts-node": "~7.0.0",
         "tslint": "~5.11.0",
         "typescript": "~3.2.2"

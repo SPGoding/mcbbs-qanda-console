@@ -4,7 +4,8 @@
     "scripts": {
         "ng": "ng",
         "start": "ng serve",
-        "build": "ng build --prod --base-href 'http://mqc.spgoding.com/'",
+        "build": "ng build --prod --base-href ./",
+        "watch": "ng build --watch",
         "test": "echo 'Error: no test specified'",
         "lint": "ng lint",
         "e2e": "ng e2e"
