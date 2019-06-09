@@ -240,12 +240,15 @@ function updateRankInfo() {
 async function drawRankTable() {
     const table: Table = []
     for (const ele of rank.slice(0, 10)) {
-        const row = [
-            (users[ele.uid - 1] && users[ele.uid - 1].heartAttained === users[ele.uid].heartAttained) ?
-                users[ele.uid - 1].heartAttained : rank.indexOf(ele) + 1,
-            users[ele.uid].username, ele.heart
-        ]
+        const row = [rank.indexOf(ele) + 1, users[ele.uid].username, ele.heart]
         table.push(row)
+    }
+    for (let i = 1; i < table.length; i++) {
+        const lastRow = table[i - 1]
+        const row = table[i]
+        if (row[2] === lastRow[2]) {
+            row[0] = lastRow[0]
+        }
     }
 
     const canvas = new Canvas(554, 260)
