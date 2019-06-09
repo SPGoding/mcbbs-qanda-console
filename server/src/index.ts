@@ -17,25 +17,25 @@ let rankTime = ''
 let registrationBBCode = ''
 let abandonedHeartBBCode = ''
 
-/**
- * 奖励
- */
-const rewards = [
-    [10, 10, 3, 2],
-    [7, 7, 2, 1],
-    [5, 5, 1, 0],
-    [3, 3, 1, 0],
-    [3, 3, 1, 0],
-    [3, 3, 1, 0],
-    [3, 3, 1, 0],
-    [3, 3, 1, 0],
-    [3, 3, 1, 0],
-    [3, 3, 1, 0]
-]
-/**
- * 每增加一贡献所需爱心
- */
-const ctbHeart = 50
+// /**
+//  * 奖励
+//  */
+// const rewards = [
+//     [10, 10, 3, 2],
+//     [7, 7, 2, 1],
+//     [5, 5, 1, 0],
+//     [3, 3, 1, 0],
+//     [3, 3, 1, 0],
+//     [3, 3, 1, 0],
+//     [3, 3, 1, 0],
+//     [3, 3, 1, 0],
+//     [3, 3, 1, 0],
+//     [3, 3, 1, 0]
+// ]
+// /**
+//  * 每增加一贡献所需爱心
+//  */
+// const ctbHeart = 50
 /**
  * 获取奖励最低爱心
  */
@@ -280,18 +280,18 @@ async function drawRankTable() {
                 row[0] = lastRow[0]
             }
         }
-        // 显示奖励
-        let reward = [0, 0, 0, 0]
-        // 各名次基础奖励
-        if (row[2] >= heartMin[i]) {
-            reward = rewards[i]
-        }
-        // 拓展贡献奖励
-        if (row[2] >= 100) {
-            const ctb = Number(row[2]) % 50 - 1
-            reward[3] += ctb
-        }
-        row.push(`${reward[0]} | ${reward[1]} | ${reward[2]} | ${reward[3]}`)
+        // // 显示奖励
+        // let reward = [0, 0, 0, 0]
+        // // 各名次基础奖励
+        // if (row[2] >= heartMin[i]) {
+        //     reward = rewards[i]
+        // }
+        // // 拓展贡献奖励
+        // if (row[2] >= 100) {
+        //     const ctb = Number(row[2]) % ctbHeart - 1
+        //     reward[3] += ctb
+        // }
+        // row.push(`${reward[0]} | ${reward[1]} | ${reward[2]} | ${reward[3]}`)
     }
 
     const canvas = new Canvas(554, 260)
@@ -302,8 +302,8 @@ async function drawRankTable() {
 
     const fontHeight = 20
     const rowHeight = 21
-    const columnLeftMargins = [0, 70, 70 + 200, 70 + 200 + 100]
-    const columnWidths = [70, 200, 100, 182]
+    const columnLeftMargins = [0, 94, 94 + 310]
+    const columnWidths = [94, 310, 145]
     ctx.font = `${fontHeight}px Microsoft Yahei`
 
     let rowNumber = 1
