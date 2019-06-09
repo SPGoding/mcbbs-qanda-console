@@ -18,6 +18,10 @@ let registrationBBCode = ''
 let abandonedHeartBBCode = ''
 
 const firstPlaceMinHeart = 50
+/**
+ * 换取贡献所需爱心数量
+ */
+const ctbUnit = 50
 const otherPlacesMinHeart = 20
 
 async function startup() {
@@ -251,6 +255,9 @@ async function drawRankTable() {
         const row = table[i]
         if (row[2] === lastRow[2]) {
             row[0] = lastRow[0]
+        }
+        if (row[2] > ctbUnit) {
+            row[2] = `${ctbUnit}×${parseInt((Number(row[2]) / ctbUnit).toString())} + ${Number(row[2]) % ctbUnit}`
         }
     }
 
