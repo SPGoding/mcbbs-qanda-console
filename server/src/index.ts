@@ -269,7 +269,7 @@ function getTime() {
 
     return `${
         date.getFullYear()}年${
-        addPreZero(date.getMonth())}月${
+        addPreZero(date.getMonth() + 1)}月${
         addPreZero(date.getDate())}日 ${
         addPreZero(date.getHours())}:${
         addPreZero(date.getMinutes())}`
