@@ -303,7 +303,7 @@ async function drawRankTable() {
     const fontHeight = 20
     const rowHeight = 21
     const columnLeftMargins = [0, 70, 70 + 200, 70 + 200 + 100]
-    const padding = 4
+    const columnWidths = [70, 200, 100, 182]
     ctx.font = `${fontHeight}px Microsoft Yahei`
 
     let rowNumber = 1
@@ -315,13 +315,15 @@ async function drawRankTable() {
             ctx.fillStyle = '#000000'
         }
         for (const cell of row) {
-            ctx.fillText(cell.toString(), padding + columnLeftMargins[columnNumber], rowNumber * rowHeight + fontHeight)
+            ctx.fillText(cell.toString(),
+                columnLeftMargins[columnNumber] + (columnWidths[columnNumber] - ctx.measureText(cell.toString()).width) / 2,
+                rowNumber * rowHeight + fontHeight)
             columnNumber++
         }
         rowNumber++
     }
     ctx.fillStyle = '#ff8000'
-    ctx.fillText(rankTime, canvas.width / 2 - ctx.measureText(rankTime).width / 2, canvas.height - padding)
+    ctx.fillText(rankTime, canvas.width / 2 - ctx.measureText(rankTime).width / 2, canvas.height - 4)
 
     return canvas.toBuffer('image/png')
 }
