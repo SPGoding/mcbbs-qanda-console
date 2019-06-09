@@ -272,8 +272,7 @@ function getTime() {
         addPreZero(date.getMonth())}月${
         addPreZero(date.getDate())}日 ${
         addPreZero(date.getHours())}:${
-        addPreZero(date.getMinutes())}
-        }`
+        addPreZero(date.getMinutes())}`
 }
 
 async function drawRankTable() {
