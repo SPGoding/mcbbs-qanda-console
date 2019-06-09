@@ -318,7 +318,7 @@ async function drawRankTable() {
         }
         rowNumber++
     }
-    ctx.fillStyle = '#ff8000'
+    ctx.fillStyle = '#81157d'
     ctx.fillText(rankTime, canvas.width / 2 - ctx.measureText(rankTime).width / 2, canvas.height - 4)
 
     return canvas.toBuffer('image/png')
