@@ -305,15 +305,11 @@ async function drawRankTable() {
     const columnLeftMargins = [0, 94, 94 + 310]
     const columnWidths = [94, 310, 145]
     ctx.font = `${fontHeight}px Microsoft Yahei`
+    ctx.fillStyle = '#000000'
 
     let rowNumber = 1
     for (const row of table) {
         let columnNumber = 0
-        if (row[2] < heartMin[rowNumber - 1]) {
-            ctx.fillStyle = '#777777'
-        } else {
-            ctx.fillStyle = '#000000'
-        }
         for (const cell of row) {
             ctx.fillText(cell.toString(),
                 columnLeftMargins[columnNumber] + (columnWidths[columnNumber] - ctx.measureText(cell.toString()).width) / 2,
