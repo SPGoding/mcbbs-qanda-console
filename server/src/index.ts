@@ -230,7 +230,7 @@ function updateRankInfo() {
         const user = users[uid]
         if (!user.banned) {
             rank.push({ uid: parseInt(uid), heart: user.heartAttained })
-        }        
+        }
     }
     rank.sort((a: RankElement, b: RankElement) => b.heart - a.heart)
     rankTime = `统计于 ${new Date().toLocaleString()}`
@@ -240,7 +240,11 @@ function updateRankInfo() {
 async function drawRankTable() {
     const table: Table = []
     for (const ele of rank.slice(0, 10)) {
-        const row = [rank.indexOf(ele) + 1, users[ele.uid].username, ele.heart]
+        const row = [
+            (users[ele.uid - 1] && users[ele.uid - 1].heartAttained === users[ele.uid].heartAttained) ?
+                users[ele.uid - 1].heartAttained : rank.indexOf(ele) + 1,
+            users[ele.uid].username, ele.heart
+        ]
         table.push(row)
     }
 
