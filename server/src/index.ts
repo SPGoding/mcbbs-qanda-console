@@ -270,9 +270,9 @@ async function drawRankTable() {
     for (const row of table) {
         let columnNumber = 0
         if ((rowNumber === 1 && row[2] < firstPlaceMinHeart) || (rowNumber > 1 && row[2] < otherPlacesMinHeart)) {
-            ctx.fillStyle = '#888888'
+            ctx.fillStyle = '#777777'
         } else {
-            ctx.fillStyle = '#ffffff'
+            ctx.fillStyle = '#000000'
         }
         for (const cell of row) {
             ctx.fillText(cell.toString(), padding + columnWidthes[columnNumber], rowNumber * rowHeight + fontHeight)
@@ -280,7 +280,7 @@ async function drawRankTable() {
         }
         rowNumber++
     }
-    ctx.fillStyle = '#ffffff'
+    ctx.fillStyle = '#ff8000'
     ctx.fillText(rankTime, canvas.width / 2 - ctx.measureText(rankTime).width / 2, canvas.height - padding)
 
     return canvas.toBuffer('image/png')
