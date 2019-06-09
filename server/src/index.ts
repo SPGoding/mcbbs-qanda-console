@@ -259,8 +259,21 @@ function updateRankInfo() {
         }
     }
     rank.sort((a: RankElement, b: RankElement) => b.heart - a.heart)
-    rankTime = `统计于 ${new Date().toLocaleString()}`
+    rankTime = `统计于 ${getTime()}`
     console.log(rankTime)
+}
+
+function getTime() {
+    const date = new Date()
+    const addPreZero = (num: number) => num < 10 ? `0${num}` : num.toString()
+
+    return `${
+        date.getFullYear()}年${
+        addPreZero(date.getMonth())}月${
+        addPreZero(date.getDate())}日 ${
+        addPreZero(date.getHours())}:${
+        addPreZero(date.getMinutes())}
+        }`
 }
 
 async function drawRankTable() {
