@@ -17,6 +17,9 @@ let rankTime = ''
 let registrationBBCode = ''
 let abandonedHeartBBCode = ''
 
+const firstPlaceMinHeart = 50
+const otherPlacesMinHeart = 20
+
 async function startup() {
     try {
         config = await loadConfig<Config>('config.json', { password: '', interal: 600000, port: 80, host: '', protocol: 'http' })
@@ -266,12 +269,18 @@ async function drawRankTable() {
     let rowNumber = 1
     for (const row of table) {
         let columnNumber = 0
+        if ((rowNumber === 1 && row[2] < firstPlaceMinHeart) || (rowNumber > 1 && row[2] < otherPlacesMinHeart)) {
+            ctx.fillStyle = '#888888'
+        } else {
+            ctx.fillStyle = '#ffffff'
+        }
         for (const cell of row) {
             ctx.fillText(cell.toString(), padding + columnWidthes[columnNumber], rowNumber * rowHeight + fontHeight)
             columnNumber++
         }
         rowNumber++
     }
+    ctx.fillStyle = '#ffffff'
     ctx.fillText(rankTime, canvas.width / 2 - ctx.measureText(rankTime).width / 2, canvas.height - padding)
 
     return canvas.toBuffer('image/png')
