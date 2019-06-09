@@ -17,12 +17,31 @@ let rankTime = ''
 let registrationBBCode = ''
 let abandonedHeartBBCode = ''
 
-const firstPlaceMinHeart = 50
 /**
- * 换取贡献所需爱心数量
+ * 奖励
  */
-const ctbUnit = 50
-const otherPlacesMinHeart = 20
+const rewards = [
+    [10, 10, 3, 2],
+    [7, 7, 2, 1],
+    [5, 5, 1, 0],
+    [3, 3, 1, 0],
+    [3, 3, 1, 0],
+    [3, 3, 1, 0],
+    [3, 3, 1, 0],
+    [3, 3, 1, 0],
+    [3, 3, 1, 0],
+    [3, 3, 1, 0]
+]
+/**
+ * 每增加一贡献所需爱心
+ */
+const ctbHeart = 50
+/**
+ * 获取奖励最低爱心
+ */
+const heartMin = [
+    50, 20, 20, 20, 20, 20, 20, 20, 20, 20
+]
 
 async function startup() {
     try {
@@ -246,19 +265,33 @@ function updateRankInfo() {
 
 async function drawRankTable() {
     const table: Table = []
+    // 初步制作表格
     for (const ele of rank.slice(0, 10)) {
         const row = [rank.indexOf(ele) + 1, users[ele.uid].username, ele.heart]
         table.push(row)
     }
-    for (let i = 1; i < table.length; i++) {
-        const lastRow = table[i - 1]
+    // 细致化表格内容
+    for (let i = 0; i < table.length; i++) {
         const row = table[i]
-        if (row[2] === lastRow[2]) {
-            row[0] = lastRow[0]
+        if (i >= 1) {
+            const lastRow = table[i - 1]
+            // 处理并列排名
+            if (row[2] === lastRow[2]) {
+                row[0] = lastRow[0]
+            }
         }
-        if (row[2] > ctbUnit) {
-            row[2] = `${ctbUnit}×${parseInt((Number(row[2]) / ctbUnit).toString())} + ${Number(row[2]) % ctbUnit}`
+        // 显示奖励
+        let reward = [0, 0, 0, 0]
+        // 各名次基础奖励
+        if (row[2] >= heartMin[i]) {
+            reward = rewards[i]
         }
+        // 拓展贡献奖励
+        if (row[2] >= 100) {
+            const ctb = Number(row[2]) % 50 - 1
+            reward[3] += ctb
+        }
+        row.push(`${reward[0]} | ${reward[1]} | ${reward[2]} | ${reward[3]}`)
     }
 
     const canvas = new Canvas(554, 260)
@@ -269,20 +302,20 @@ async function drawRankTable() {
 
     const fontHeight = 20
     const rowHeight = 21
-    const columnWidthes = [0, 94, 94 + 312]
+    const columnLeftMargins = [0, 70, 70 + 200, 70 + 200 + 100]
     const padding = 4
     ctx.font = `${fontHeight}px Microsoft Yahei`
 
     let rowNumber = 1
     for (const row of table) {
         let columnNumber = 0
-        if ((rowNumber === 1 && row[2] < firstPlaceMinHeart) || (rowNumber > 1 && row[2] < otherPlacesMinHeart)) {
+        if (row[2] < heartMin[rowNumber - 1]) {
             ctx.fillStyle = '#777777'
         } else {
             ctx.fillStyle = '#000000'
         }
         for (const cell of row) {
-            ctx.fillText(cell.toString(), padding + columnWidthes[columnNumber], rowNumber * rowHeight + fontHeight)
+            ctx.fillText(cell.toString(), padding + columnLeftMargins[columnNumber], rowNumber * rowHeight + fontHeight)
             columnNumber++
         }
         rowNumber++
