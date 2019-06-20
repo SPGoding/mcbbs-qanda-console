@@ -239,8 +239,6 @@ function check() {
 }
 
 async function updateInfo(toUpdateUserInfo = true) {
-    rankTime = `统计于 ${getTime()}`
-    console.log(rankTime)
     if (toUpdateUserInfo) {
         await updateUserInfo()
     }
@@ -276,6 +274,8 @@ function updateRankInfo() {
         }
     }
     rank.sort((a: RankElement, b: RankElement) => b.heart - a.heart)
+    rankTime = `统计于 ${getTime()}`
+    console.log(rankTime)
 }
 
 function getTime() {
