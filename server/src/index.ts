@@ -55,7 +55,6 @@ async function startup() {
             await setPassword()
         }
 
-        await updateInfo()
         setInterval(check, 30000)
 
         const requestListener = async (req: http.IncomingMessage, res: http.ServerResponse) => {
@@ -188,6 +187,8 @@ async function startup() {
                 })
         }
 
+        await updateInfo()
+
         console.log(`Server is running at ${config.protocol}://${config.host}:${config.port}.`)
     } catch (e) {
         console.error(e)
@@ -255,8 +256,6 @@ function check() {
 }
 
 async function updateInfo(toUpdateUserInfo = true) {
-    rankTime = `统计于 ${getTime()}`
-    console.log(rankTime)
     if (toUpdateUserInfo) {
         await updateUserInfo()
     }
@@ -292,6 +291,8 @@ function updateRankInfo() {
         }
     }
     rank.sort((a: RankElement, b: RankElement) => b.heart - a.heart)
+    rankTime = `统计于 ${getTime()}`
+    console.log(rankTime)
 }
 
 function getTime() {
