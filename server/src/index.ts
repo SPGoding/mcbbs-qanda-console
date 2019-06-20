@@ -56,7 +56,7 @@ async function startup() {
         }
 
         await updateInfo()
-        setInterval(check, 500)
+        setInterval(check, 30000)
 
         const requestListener = async (req: http.IncomingMessage, res: http.ServerResponse) => {
             if (req.method === 'GET') {
