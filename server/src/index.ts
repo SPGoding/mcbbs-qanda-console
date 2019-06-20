@@ -1,5 +1,6 @@
 import * as rp from 'request-promise-native'
 import * as http from 'http'
+import * as https from 'https'
 import * as fs from 'fs-extra'
 import * as path from 'path'
 import * as qs from 'querystring'
@@ -55,123 +56,138 @@ async function startup() {
         }
 
         await updateInfo()
-        setInterval(check, 900)
+        setInterval(check, 500)
 
-        http
-            .createServer(async (req, res) => {
-                if (req.method === 'GET') {
-                    if (req.url === '/api/get-rank-image') {
-                        res.writeHead(200, { 'Content-Type': 'image/png' })
-                        res.end(rankImage)
-                    } else if (req.url === '/api/get-registration-bbcode') {
-                        res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' })
-                        res.end(registrationBBCode)
-                    } else if (req.url === '/api/get-abandoned-hearts-bbcode') {
-                        res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' })
-                        res.end(abandonedHeartBBCode)
-                    } else if (req.url === '/api/get-users') {
-                        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' })
-                        res.end(JSON.stringify(users))
-                    } else if (req.url === '/favicon.ico') {
-                        const filePath = path.join(__dirname, '../../client/dist/mcbbs-qanda-console-client/favicon.ico')
-                        res.writeHead(200, { 'Content-Type': 'image/x-icon' })
-                        res.end(await fs.readFile(filePath))
+        const requestListener = async (req: http.IncomingMessage, res: http.ServerResponse) => {
+            if (req.method === 'GET') {
+                if (req.url === '/api/get-rank-image') {
+                    res.writeHead(200, { 'Content-Type': 'image/png' })
+                    res.end(rankImage)
+                } else if (req.url === '/api/get-registration-bbcode') {
+                    res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' })
+                    res.end(registrationBBCode)
+                } else if (req.url === '/api/get-abandoned-hearts-bbcode') {
+                    res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' })
+                    res.end(abandonedHeartBBCode)
+                } else if (req.url === '/api/get-users') {
+                    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' })
+                    res.end(JSON.stringify(users))
+                } else if (req.url === '/favicon.ico') {
+                    const filePath = path.join(__dirname, '../../client/dist/mcbbs-qanda-console-client/favicon.ico')
+                    res.writeHead(200, { 'Content-Type': 'image/x-icon' })
+                    res.end(await fs.readFile(filePath))
+                } else {
+                    const filePath = path.join(__dirname, '../../client/dist/mcbbs-qanda-console-client',
+                        req.url && req.url !== '/' ? req.url : 'index.html')
+                    const subType: string = {
+                        css: 'css',
+                        html: 'html',
+                        js: 'javascript',
+                        txt: 'plain'
+                    }[filePath.slice(filePath.lastIndexOf('.') + 1)]
+                    if (await fs.pathExists(filePath)) {
+                        let content = await fs.readFile(filePath, 'utf8')
+                        content = content.replace(/%\{serverUrl}%/g, `${config.protocol}://${config.host}:${config.port}`)
+                        res.writeHead(200, { 'Content-Type': `text/${subType}; charset=utf-8` })
+                        res.end(content)
                     } else {
-                        const filePath = path.join(__dirname, '../../client/dist/mcbbs-qanda-console-client',
-                            req.url && req.url !== '/' ? req.url : 'index.html')
-                        const subType: string = {
-                            css: 'css',
-                            html: 'html',
-                            js: 'javascript',
-                            txt: 'plain'
-                        }[filePath.slice(filePath.lastIndexOf('.') + 1)]
-                        if (await fs.pathExists(filePath)) {
-                            let content = await fs.readFile(filePath, 'utf8')
-                            content = content.replace(/%\{serverUrl}%/g, `${config.protocol}://${config.host}:${config.port}`)
-                            res.writeHead(200, { 'Content-Type': `text/${subType}; charset=utf-8` })
-                            res.end(content)
-                        } else {
-                            res.writeHead(404, 'Resource Not Found', { 'Content-Type': 'text/html; charset=utf-8' })
-                            res.end(getHtmlFromCode(404))
-                        }
-                    }
-                } else if (req.method === 'POST') {
-                    if (req.url !== '/api/add-user' && req.url !== '/api/del-user' && req.url !== '/api/edit-user' && req.url !== '/api/login') {
-                        res.writeHead(404, 'Resource Not Found', { 'Content-Type': 'text/html' })
+                        res.writeHead(404, 'Resource Not Found', { 'Content-Type': 'text/html; charset=utf-8' })
                         res.end(getHtmlFromCode(404))
-                        return
-                    }
-                    if (req.url === '/api/add-user') {
-                        const data = await handlePost(req, res)
-                        if (!data.password || md5(data.password.toString()) !== config.password) {
-                            res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' })
-                            res.end(getHtmlFromCode(400))
-                            return
-                        }
-                        if (data.uid !== undefined) {
-                            if (data.heartInitial !== undefined) {
-                                await addUser(parseInt(data.uid as string), parseInt(data.heartInitial as string))
-                            } else {
-                                await addUser(parseInt(data.uid as string))
-                            }
-                            res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' })
-                            res.end(getHtmlFromCode(200))
-                        } else {
-                            res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' })
-                            res.end(getHtmlFromCode(400))
-                        }
-                    } else if (req.url === '/api/del-user') {
-                        const data = await handlePost(req, res)
-                        if (!data.password || md5(data.password.toString()) !== config.password) {
-                            res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' })
-                            res.end(getHtmlFromCode(400))
-                            return
-                        }
-                        if (data.uid !== undefined) {
-                            delUser(parseInt(data.uid as string))
-                            res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' })
-                            res.end(getHtmlFromCode(200))
-                        } else {
-                            res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' })
-                            res.end(getHtmlFromCode(400))
-                        }
-                    } else if (req.url === '/api/edit-user') {
-                        const data = await handlePost(req, res)
-                        if (!data.password || md5(data.password.toString()) !== config.password) {
-                            res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' })
-                            res.end(getHtmlFromCode(400))
-                            return
-                        }
-                        if (data.uid !== undefined && data.heartInitial !== undefined && data.heartAbandoned !== undefined && data.banned !== undefined) {
-                            editUser(
-                                parseInt(data.uid as string),
-                                parseInt(data.heartInitial as string),
-                                parseInt(data.heartAbandoned as string),
-                                (data.heartAbandonedLinks as string).split(/,/g),
-                                data.banned === 'true'
-                            )
-                            res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' })
-                            res.end(getHtmlFromCode(200))
-                        } else {
-                            res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' })
-                            res.end(getHtmlFromCode(400))
-                        }
-                    } else if (req.url === '/api/login') {
-                        const data = await handlePost(req, res)
-                        if (data.password && md5(data.password.toString()) === config.password) {
-                            res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' })
-                            res.end('S')
-                        } else {
-                            res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' })
-                            res.end('E')
-                        }
                     }
                 }
-            })
-            .listen(config.port)
-            .on('error', e => {
-                console.error(e.message)
-            })
+            } else if (req.method === 'POST') {
+                if (req.url !== '/api/add-user' && req.url !== '/api/del-user' && req.url !== '/api/edit-user' && req.url !== '/api/login') {
+                    res.writeHead(404, 'Resource Not Found', { 'Content-Type': 'text/html' })
+                    res.end(getHtmlFromCode(404))
+                    return
+                }
+                if (req.url === '/api/add-user') {
+                    const data = await handlePost(req, res)
+                    if (!data.password || md5(data.password.toString()) !== config.password) {
+                        res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' })
+                        res.end(getHtmlFromCode(400))
+                        return
+                    }
+                    if (data.uid !== undefined) {
+                        if (data.heartInitial !== undefined) {
+                            await addUser(parseInt(data.uid as string), parseInt(data.heartInitial as string))
+                        } else {
+                            await addUser(parseInt(data.uid as string))
+                        }
+                        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' })
+                        res.end(getHtmlFromCode(200))
+                    } else {
+                        res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' })
+                        res.end(getHtmlFromCode(400))
+                    }
+                } else if (req.url === '/api/del-user') {
+                    const data = await handlePost(req, res)
+                    if (!data.password || md5(data.password.toString()) !== config.password) {
+                        res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' })
+                        res.end(getHtmlFromCode(400))
+                        return
+                    }
+                    if (data.uid !== undefined) {
+                        delUser(parseInt(data.uid as string))
+                        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' })
+                        res.end(getHtmlFromCode(200))
+                    } else {
+                        res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' })
+                        res.end(getHtmlFromCode(400))
+                    }
+                } else if (req.url === '/api/edit-user') {
+                    const data = await handlePost(req, res)
+                    if (!data.password || md5(data.password.toString()) !== config.password) {
+                        res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' })
+                        res.end(getHtmlFromCode(400))
+                        return
+                    }
+                    if (data.uid !== undefined && data.heartInitial !== undefined && data.heartAbandoned !== undefined && data.banned !== undefined) {
+                        editUser(
+                            parseInt(data.uid as string),
+                            parseInt(data.heartInitial as string),
+                            parseInt(data.heartAbandoned as string),
+                            (data.heartAbandonedLinks as string).split(/,/g),
+                            data.banned === 'true'
+                        )
+                        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' })
+                        res.end(getHtmlFromCode(200))
+                    } else {
+                        res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' })
+                        res.end(getHtmlFromCode(400))
+                    }
+                } else if (req.url === '/api/login') {
+                    const data = await handlePost(req, res)
+                    if (data.password && md5(data.password.toString()) === config.password) {
+                        res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' })
+                        res.end('S')
+                    } else {
+                        res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' })
+                        res.end('E')
+                    }
+                }
+            }
+        }
+
+        if (config.keyFile && config.certFile) {
+            https
+                .createServer({
+                    key: fs.readFileSync(config.keyFile),
+                    cert: fs.readFileSync(config.certFile)
+                }, requestListener)
+                .listen(config.port)
+                .on('error', e => {
+                    console.error(e.message)
+                })
+        } else {
+            http
+                .createServer(requestListener)
+                .listen(config.port)
+                .on('error', e => {
+                    console.error(e.message)
+                })
+        }
+
         console.log(`Server is running at ${config.protocol}://${config.host}:${config.port}.`)
     } catch (e) {
         console.error(e)
@@ -239,6 +255,8 @@ function check() {
 }
 
 async function updateInfo(toUpdateUserInfo = true) {
+    rankTime = `统计于 ${getTime()}`
+    console.log(rankTime)
     if (toUpdateUserInfo) {
         await updateUserInfo()
     }
@@ -274,8 +292,6 @@ function updateRankInfo() {
         }
     }
     rank.sort((a: RankElement, b: RankElement) => b.heart - a.heart)
-    rankTime = `统计于 ${getTime()}`
-    console.log(rankTime)
 }
 
 function getTime() {

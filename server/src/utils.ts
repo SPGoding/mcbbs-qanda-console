@@ -6,7 +6,9 @@ export interface Config {
     interal: number,
     port: number,
     host: string,
-    protocol: string
+    protocol: string,
+    keyFile?: string,
+    certFile?: string
 }
 
 export interface User {
