@@ -169,7 +169,7 @@ async function startup() {
             }
         }
 
-        if (config.keyFile && config.certFile) {
+        if (config.protocol === 'https' && config.keyFile && config.certFile) {
             https
                 .createServer({
                     key: fs.readFileSync(config.keyFile),
