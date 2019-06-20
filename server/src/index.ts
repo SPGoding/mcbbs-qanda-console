@@ -17,6 +17,8 @@ let rankTime = ''
 let registrationBBCode = ''
 let abandonedHeartBBCode = ''
 
+let lastUpdateTime: Date
+
 // /**
 //  * 奖励
 //  */
@@ -53,7 +55,7 @@ async function startup() {
         }
 
         await updateInfo()
-        setInterval(updateInfo, config.interal)
+        setInterval(check, 900)
 
         http
             .createServer(async (req, res) => {
@@ -223,7 +225,22 @@ function getHtmlFromCode(code: 200 | 400 | 404) {
     return `<!doctype html><html><head><title>${code}</title></head><body>${code}: ${messages[code]}</body></html>`
 }
 
+function check() {
+    if (!lastUpdateTime) {
+        lastUpdateTime = new Date()
+        updateInfo()
+    } else {
+        const now = new Date()
+        if (now.getMinutes() % 10 === 0 && now.getTime() - lastUpdateTime.getTime() >= config.interal) {
+            updateInfo()
+            lastUpdateTime = now
+        }
+    }
+}
+
 async function updateInfo(toUpdateUserInfo = true) {
+    rankTime = `统计于 ${getTime()}`
+    console.log(rankTime)
     if (toUpdateUserInfo) {
         await updateUserInfo()
     }
@@ -259,8 +276,6 @@ function updateRankInfo() {
         }
     }
     rank.sort((a: RankElement, b: RankElement) => b.heart - a.heart)
-    rankTime = `统计于 ${getTime()}`
-    console.log(rankTime)
 }
 
 function getTime() {
