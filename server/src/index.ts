@@ -55,7 +55,7 @@ async function startup() {
             await setPassword()
         }
 
-        setInterval(check, 30000)
+        setInterval(check, 15000)
 
         const requestListener = async (req: http.IncomingMessage, res: http.ServerResponse) => {
             if (req.method === 'GET') {
@@ -256,6 +256,8 @@ function check() {
 }
 
 async function updateInfo(toUpdateUserInfo = true) {
+    rankTime = `统计于 ${getTime()}`
+    console.log(rankTime)
     if (toUpdateUserInfo) {
         await updateUserInfo()
     }
@@ -291,8 +293,6 @@ function updateRankInfo() {
         }
     }
     rank.sort((a: RankElement, b: RankElement) => b.heart - a.heart)
-    rankTime = `统计于 ${getTime()}`
-    console.log(rankTime)
 }
 
 function getTime() {
