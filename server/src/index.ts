@@ -39,12 +39,7 @@ let lastUpdateTime: Date
 //  * 每增加一贡献所需爱心
 //  */
 // const ctbHeart = 50
-/**
- * 获取奖励最低爱心
- */
-const heartMin = [
-    50, 20, 20, 20, 20, 20, 20, 20, 20, 20
-]
+const minHeart = 20
 
 async function startup() {
     try {
@@ -248,7 +243,7 @@ function check() {
         updateInfo()
     } else {
         const now = new Date()
-        if (now.getMinutes() % 10 === 0 && now.getTime() - lastUpdateTime.getTime() >= config.interal) {
+        if (now.getMinutes() % (config.interal / 60000) === 0 && now.getTime() - lastUpdateTime.getTime() >= config.interal - 5000) {
             updateInfo()
             lastUpdateTime = now
         }
@@ -354,6 +349,11 @@ async function drawRankTable() {
     let rowNumber = 1
     for (const row of table) {
         let columnNumber = 0
+        if (row[2] >= minHeart) {
+            ctx.fillStyle = '#555555'
+        } else {
+            ctx.fillStyle = '#000000'
+        }
         for (const cell of row) {
             ctx.fillText(cell.toString(),
                 columnLeftMargins[columnNumber] + (columnWidths[columnNumber] - ctx.measureText(cell.toString()).width) / 2,
