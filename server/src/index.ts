@@ -350,7 +350,7 @@ async function drawRankTable() {
     for (const row of table) {
         let columnNumber = 0
         if (row[2] < minHeart) {
-            ctx.fillStyle = '#444444'
+            ctx.fillStyle = '#666666'
         } else {
             ctx.fillStyle = '#000000'
         }
