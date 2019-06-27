@@ -41,6 +41,8 @@ let lastUpdateTime: Date
 // const ctbHeart = 50
 const minHeart = 20
 
+let stopShowingRankImage = false
+
 async function startup() {
     try {
         config = await loadConfig<Config>('config.json', { password: '', interal: 600000, port: 80, host: '', protocol: 'http' })
@@ -54,7 +56,7 @@ async function startup() {
 
         const requestListener = async (req: http.IncomingMessage, res: http.ServerResponse) => {
             if (req.method === 'GET') {
-                if (req.url === '/api/get-rank-image') {
+                if (req.url && req.url.split('?')[0] === '/api/get-rank-image') {
                     res.writeHead(200, { 'Content-Type': 'image/png' })
                     res.end(rankImage)
                 } else if (req.url === '/api/get-registration-bbcode') {
@@ -67,30 +69,19 @@ async function startup() {
                     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' })
                     res.end(JSON.stringify(users))
                 } else if (req.url === '/favicon.ico') {
-                    const filePath = path.join(__dirname, '../../client/dist/mcbbs-qanda-console-client/favicon.ico')
+                    const filePath = path.join(__dirname, '../../client/favicon.ico')
                     res.writeHead(200, { 'Content-Type': 'image/x-icon' })
                     res.end(await fs.readFile(filePath))
                 } else {
-                    const filePath = path.join(__dirname, '../../client/dist/mcbbs-qanda-console-client',
-                        req.url && req.url !== '/' ? req.url : 'index.html')
-                    const subType: string = {
-                        css: 'css',
-                        html: 'html',
-                        js: 'javascript',
-                        txt: 'plain'
-                    }[filePath.slice(filePath.lastIndexOf('.') + 1)]
-                    if (await fs.pathExists(filePath)) {
-                        let content = await fs.readFile(filePath, 'utf8')
-                        content = content.replace(/%\{serverUrl}%/g, `${config.protocol}://${config.host}:${config.port}`)
-                        res.writeHead(200, { 'Content-Type': `text/${subType}; charset=utf-8` })
-                        res.end(content)
-                    } else {
-                        res.writeHead(404, 'Resource Not Found', { 'Content-Type': 'text/html; charset=utf-8' })
-                        res.end(getHtmlFromCode(404))
-                    }
+                    const filePath = path.join(__dirname, '../../client', 'index.html')
+                    let content = await fs.readFile(filePath, 'utf8')
+                    content = content.replace(/%\{serverUrl}%/g, `${config.protocol}://${config.host}:${config.port}`)
+                    res.writeHead(200, { 'Content-Type': `text/html; charset=utf-8` })
+                    res.end(content)
                 }
             } else if (req.method === 'POST') {
-                if (req.url !== '/api/add-user' && req.url !== '/api/del-user' && req.url !== '/api/edit-user' && req.url !== '/api/login') {
+                if (req.url !== '/api/add-user' && req.url !== '/api/del-user' && req.url !== '/api/edit-user'
+                    && req.url !== '/api/login' && req.url !== '/api/toggle-showing-rank-image') {
                     res.writeHead(404, 'Resource Not Found', { 'Content-Type': 'text/html' })
                     res.end(getHtmlFromCode(404))
                     return
@@ -159,6 +150,17 @@ async function startup() {
                         res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' })
                         res.end('E')
                     }
+                } else if (req.url === '/api/toggle-showing-rank-image') {
+                    const data = await handlePost(req, res)
+                    if (data.password && md5(data.password.toString()) === config.password) {
+                        stopShowingRankImage = !stopShowingRankImage
+                        rankImage = await drawRankTable()
+                        res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' })
+                        res.end('S')
+                    } else {
+                        res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' })
+                        res.end(getHtmlFromCode(400))
+                    }
                 }
             }
         }
@@ -197,7 +199,7 @@ async function setPassword() {
         read({ prompt: "Password: ", silent: true }, async (_, pass) => {
             read({ prompt: "Password again: ", silent: true }, async (_, pass2) => {
                 if (pass === pass2) {
-                    config.password = md5(md5(pass))
+                    config.password = md5(pass)
                     await writeConfig<Config>('config.json', config)
                     resolve()
                 } else {
@@ -303,69 +305,77 @@ function getTime() {
 }
 
 async function drawRankTable() {
-    const table: Table = []
-    // 初步制作表格
-    for (const ele of rank.slice(0, 10)) {
-        const row = [rank.indexOf(ele) + 1, users[ele.uid].username, ele.heart]
-        table.push(row)
-    }
-    // 细致化表格内容
-    for (let i = 0; i < table.length; i++) {
-        const row = table[i]
-        if (i >= 1) {
-            const lastRow = table[i - 1]
-            // 处理并列排名
-            if (row[2] === lastRow[2]) {
-                row[0] = lastRow[0]
+    if (!stopShowingRankImage) {
+        const table: Table = []
+        // 初步制作表格
+        for (const ele of rank.slice(0, 10)) {
+            const row = [rank.indexOf(ele) + 1, users[ele.uid].username, ele.heart]
+            table.push(row)
+        }
+        // 细致化表格内容
+        for (let i = 0; i < table.length; i++) {
+            const row = table[i]
+            if (i >= 1) {
+                const lastRow = table[i - 1]
+                // 处理并列排名
+                if (row[2] === lastRow[2]) {
+                    row[0] = lastRow[0]
+                }
             }
+            // // 显示奖励
+            // let reward = [0, 0, 0, 0]
+            // // 各名次基础奖励
+            // if (row[2] >= heartMin[i]) {
+            //     reward = rewards[i]
+            // }
+            // // 拓展贡献奖励
+            // if (row[2] >= 100) {
+            //     const ctb = Number(row[2]) % ctbHeart - 1
+            //     reward[3] += ctb
+            // }
+            // row.push(`${reward[0]} | ${reward[1]} | ${reward[2]} | ${reward[3]}`)
         }
-        // // 显示奖励
-        // let reward = [0, 0, 0, 0]
-        // // 各名次基础奖励
-        // if (row[2] >= heartMin[i]) {
-        //     reward = rewards[i]
-        // }
-        // // 拓展贡献奖励
-        // if (row[2] >= 100) {
-        //     const ctb = Number(row[2]) % ctbHeart - 1
-        //     reward[3] += ctb
-        // }
-        // row.push(`${reward[0]} | ${reward[1]} | ${reward[2]} | ${reward[3]}`)
+
+        const canvas = new Canvas(554, 260)
+        const ctx = canvas.getContext('2d')
+        const img = await loadImage(path.join(__dirname, '../img/table.png'))
+        ctx.fillRect(0, 0, canvas.width, canvas.height)
+        ctx.drawImage(img, 0, 0)
+
+        const fontHeight = 20
+        const rowHeight = 21
+        const columnLeftMargins = [0, 94, 94 + 310]
+        const columnWidths = [94, 310, 145]
+        ctx.font = `${fontHeight}px Microsoft Yahei`
+        ctx.fillStyle = '#000000'
+
+        let rowNumber = 1
+        for (const row of table) {
+            let columnNumber = 0
+            if (row[2] < minHeart) {
+                ctx.fillStyle = '#666666'
+            } else {
+                ctx.fillStyle = '#000000'
+            }
+            for (const cell of row) {
+                ctx.fillText(cell.toString(),
+                    columnLeftMargins[columnNumber] + (columnWidths[columnNumber] - ctx.measureText(cell.toString()).width) / 2,
+                    rowNumber * rowHeight + fontHeight)
+                columnNumber++
+            }
+            rowNumber++
+        }
+        ctx.fillStyle = '#81157d'
+        ctx.fillText(rankTime, canvas.width / 2 - ctx.measureText(rankTime).width / 2, canvas.height - 4)
+
+        return canvas.toBuffer('image/png')
+    } else {
+        const canvas = new Canvas(554, 260)
+        const ctx = canvas.getContext('2d')
+        const img = await loadImage(path.join(__dirname, '../img/static-table.png'))
+        ctx.drawImage(img, 0, 0)
+        return canvas.toBuffer('image/png')
     }
-
-    const canvas = new Canvas(554, 260)
-    const ctx = canvas.getContext('2d')
-    const img = await loadImage(path.join(__dirname, '../img/table.png'))
-    ctx.fillRect(0, 0, canvas.width, canvas.height)
-    ctx.drawImage(img, 0, 0)
-
-    const fontHeight = 20
-    const rowHeight = 21
-    const columnLeftMargins = [0, 94, 94 + 310]
-    const columnWidths = [94, 310, 145]
-    ctx.font = `${fontHeight}px Microsoft Yahei`
-    ctx.fillStyle = '#000000'
-
-    let rowNumber = 1
-    for (const row of table) {
-        let columnNumber = 0
-        if (row[2] < minHeart) {
-            ctx.fillStyle = '#666666'
-        } else {
-            ctx.fillStyle = '#000000'
-        }
-        for (const cell of row) {
-            ctx.fillText(cell.toString(),
-                columnLeftMargins[columnNumber] + (columnWidths[columnNumber] - ctx.measureText(cell.toString()).width) / 2,
-                rowNumber * rowHeight + fontHeight)
-            columnNumber++
-        }
-        rowNumber++
-    }
-    ctx.fillStyle = '#81157d'
-    ctx.fillText(rankTime, canvas.width / 2 - ctx.measureText(rankTime).width / 2, canvas.height - 4)
-
-    return canvas.toBuffer('image/png')
 }
 
 function getRegistrationBBCode() {

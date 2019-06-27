@@ -3,13 +3,9 @@
     "version": "0.0.0",
     "scripts": {
         "start": "cd server && npm start",
-        "build": "npm run build:client && npm run build:server",
-        "build:client": "cd client && npm run build && cd ..",
-        "build:server": "cd server && npm run build && cd ..",
-        "watch:client": "cd client && npm run watch",
-        "watch:server": "cd server && npm run watch",
-        "postinstall": "npm run install:client && npm run install:server",
-        "install:client": "cd client && npm i && cd ..",
+        "build": "cd server && npm run build && cd ..",
+        "watch": "cd server && npm run watch",
+        "postinstall": "npm run install:server",
         "install:server": "cd server && npm i && cd ..",
         "test": "echo 'Error: no test specified'"
     },

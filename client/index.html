@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>MCBBS 问答版月度活动管理后台</title>
+    <style>
+        #manage,
+        #preview {
+            display: inline-block;
+            *display: inline;
+            zoom: 1;
+            vertical-align: top;
+            font-size: 12px;
+            width: 49%;
+        }
+
+        .card {
+            box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
+            transition: 0.3s;
+            padding: 2px;
+        }
+
+        .card:hover {
+            box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.2);
+        }
+
+        pre {
+            background: #F8F8FF;
+            border: black dashed 1px;
+            padding: 6px;
+            margin: 8px;
+        }
+
+        button {
+            border: none;
+            color: white;
+            padding: 15px 32px;
+            text-align: center;
+            display: inline-block;
+            font-size: 16px;
+            margin: 8px;
+        }
+
+        .primary {
+            background-color: #008CBA;
+        }
+
+        .warning {
+            background-color: #81157d;
+        }
+
+        .small {
+            padding: 8px 24px;
+            text-align: center;
+            display: inline-block;
+            font-size: 12px;
+            margin: 2px;
+        }
+
+        #rank-image {
+            max-width: 100%;
+        }
+
+        #users {
+            font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        #users td,
+        #users th {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+
+        #users tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
+        #users tr:hover {
+            background-color: #ddd;
+        }
+
+        #users th {
+            padding-top: 12px;
+            padding-bottom: 12px;
+            text-align: left;
+            background-color: #4CAF50;
+            color: white;
+        }
+    </style>
+</head>
+
+<body style="text-align: center;">
+    <br />
+    <div class="card" id="manage">
+        <h1>管理</h1>
+        <div id="logged-out">
+            <p>您需要登录才能进行管理…</p>
+            <input id="password" type="password" placeholder="密码" /><br />
+            <input id="to-save-password" type="checkbox" />记住密码<br />
+            <button type="button" onclick="login()" class="primary">登录</button>
+        </div>
+        <div id="logged-in" style="display: none;">
+            <p>欢迎您，问答大区版主，<a href="#" onclick="logout()">点此登出</a>。</p>
+            <table id="users">
+                <tr>
+                    <th onclick="sortTable(0)">UID</th>
+                    <th onclick="sortTable(1)">用户名</th>
+                    <th onclick="sortTable(2)">初始爱心</th>
+                    <th onclick="sortTable(3)">放弃爱心</th>
+                    <th onclick="sortTable(4)">当前爱心</th>
+                    <th onclick="sortTable(5)">获取爱心</th>
+                    <th onclick="sortTable(6)">禁赛</th>
+                    <th>操作</th>
+                </tr>
+            </table>
+            <button type="button" onclick="addUserDialog.open = true" class="primary">添加用户</button>
+            <button type="button" onclick="toggleShowingRankImage()" class="warning">切换公示</button>
+        </div>
+        <dialog id="add-user-dialog">
+            <h1>添加用户</h1>
+            <input id="add-user-dialog-uid" type="text" placeholder="UID" /><br />
+            <input id="add-user-dialog-heart-initial" type="text" placeholder="初始爱心数量（留空自动获取）" /><br />
+            <button type="button" onclick="addUser()" class="primary">添加</button>
+            <button type="button" onclick="addUserDialog.open = false">取消</button>
+        </dialog>
+        <dialog id="edit-user-dialog">
+            <h1>编辑用户</h1>
+            <input id="edit-user-dialog-uid" type="text" placeholder="UID" /><br />
+            <input id="edit-user-dialog-heart-initial" type="text" placeholder="初始爱心数量" /><br />
+            <input id="edit-user-dialog-heart-abandoned" type="text" placeholder="放弃爱心数量" /><br />
+            <input id="edit-user-dialog-banned" type="checkbox" />已被禁赛<br />
+            <button type="button" onclick="editUser()" class="primary">编辑</button>
+            <button type="button" onclick="editUserDialog.open = false">取消</button>
+        </dialog>
+    </div>
+    <div class="card" id="preview">
+        <h1>预览</h1>
+        <h2>爱心统计表格</h2>
+        <img id="rank-image" />
+        <pre id="rank-image-bbcode">加载中…</pre>
+    </div>
+    <script>
+        'use strict'
+        // Constants
+        const url = '%{serverUrl}%'
+        const api = {
+            getRankImage: 'api/get-rank-image',
+            getAbandonedHeartsBBCode: 'api/get-abandoned-hearts-bbcode',
+            getRegistrationBBCode: 'api/get-registration-bbcode',
+            getUsers: 'api/get-users',
+            login: 'api/login',
+            addUser: 'api/add-user',
+            editUser: 'api/edit-user',
+            delUser: 'api/del-user',
+            toggleShowingRankImage: 'api/toggle-showing-rank-image'
+        }
+
+        // Get elements
+        const loggedOut = document.getElementById('logged-out')
+        const loggedIn = document.getElementById('logged-in')
+        const rankImage = document.getElementById('rank-image')
+        const rankImageBBCode = document.getElementById('rank-image-bbcode')
+        const password = document.getElementById('password')
+        const toSavePassword = document.getElementById('to-save-password')
+        const addUserDialog = document.getElementById('add-user-dialog')
+        const addUserDialogUid = document.getElementById('add-user-dialog-uid')
+        const addUserDialogHeartInitial = document.getElementById('add-user-dialog-heart-initial')
+        const editUserDialog = document.getElementById('edit-user-dialog')
+        const editUserDialogUid = document.getElementById('edit-user-dialog-uid')
+        const editUserDialogHeartInitial = document.getElementById('edit-user-dialog-heart-initial')
+        const editUserDialogHeartAbandoned = document.getElementById('edit-user-dialog-heart-abandoned')
+        const editUserDialogBanned = document.getElementById('edit-user-dialog-banned')
+        const usersTable = document.getElementById('users')
+
+        // Other data
+        let users
+
+        // Set rank images
+        rankImageBBCode.innerHTML = `[img=554,260]${url}/${api.getRankImage}[/img]`
+
+        // Auto login
+        {
+            const pwd = window.localStorage.getItem('savedPassword')
+            if (pwd) {
+                toSavePassword.checked = true
+                password.value = pwd
+                login()
+            }
+        }
+
+        async function login() {
+            if (toSavePassword.checked) {
+                window.localStorage.setItem('savedPassword', password.value)
+            }
+            const response = await request('POST', api.login, `password=${password.value}`)
+            if (response === 'S') {
+                setIsLoggedIn(true)
+            } else {
+                password.value = ''
+                window.localStorage.clear()
+                alert('密码错误')
+            }
+        }
+
+        async function logout() {
+            setIsLoggedIn(false)
+            password.value = ''
+            window.localStorage.clear()
+        }
+
+        function setIsLoggedIn(bool) {
+            if (bool) {
+                loggedIn.style.display = ''
+                loggedOut.style.display = 'none'
+            } else {
+                loggedIn.style.display = 'none'
+                loggedOut.style.display = ''
+            }
+        }
+
+        // Update
+        updateAll()
+        setInterval(updateAll, 60000)
+        async function updateAll() {
+            rankImage.src = `${url}/${api.getRankImage}?t=${new Date().getTime()}`
+            await getUsers()
+        }
+
+        async function getUsers() {
+            const jsonArray = JSON.parse(await request('GET', api.getUsers))
+            users = []
+            for (const uid in jsonArray) {
+                users.push({ ...jsonArray[uid], uid: Number(uid) })
+            }
+            usersTable.innerHTML = `<table id="users">
+                <tr>
+                    <th onclick="sortTable(0)">UID</th>
+                    <th onclick="sortTable(1)">用户名</th>
+                    <th onclick="sortTable(2)">初始爱心</th>
+                    <th onclick="sortTable(3)">放弃爱心</th>
+                    <th onclick="sortTable(4)">当前爱心</th>
+                    <th onclick="sortTable(5)">获取爱心</th>
+                    <th onclick="sortTable(6)">禁赛</th>
+                    <th>操作</th>
+                </tr>
+            </table>`
+            for (const user of users) {
+                const row = usersTable.insertRow(-1)
+                const uid = row.insertCell(0)
+                const username = row.insertCell(1)
+                const heartInitial = row.insertCell(2)
+                const heartAbandoned = row.insertCell(3)
+                const heartPresent = row.insertCell(4)
+                const heartAttained = row.insertCell(5)
+                const banned = row.insertCell(6)
+                const operations = row.insertCell(7)
+                uid.innerHTML = user.uid
+                username.innerHTML = user.username
+                heartInitial.innerHTML = user.heartInitial
+                heartAbandoned.innerHTML = user.heartAbandoned
+                heartPresent.innerHTML = user.heartPresent
+                heartAttained.innerHTML = user.heartAttained
+                banned.innerHTML = user.banned
+                operations.innerHTML = `<button type="button" onclick="delUser(${user.uid})" class="warning small">删除</button>`
+            }
+        }
+
+        async function toggleShowingRankImage() {
+            const response = await request('POST', api.toggleShowingRankImage, `password=${password.value}`)
+            if (response === 'S') {
+                await updateAll()
+            } else {
+                alert(response)
+            }
+        }
+
+        async function addUser() {
+            console.log(addUserDialogHeartInitial.value)
+            if (addUserDialogHeartInitial.value !== '') {
+                await request('POST', api.addUser, `password=${password.value}&uid=${
+                    addUserDialogUid.value}&heartInitial=${addUserDialogHeartInitial.value}`)
+            } else {
+                await request('POST', api.addUser, `password=${password.value}&uid=${addUserDialogUid.value}`)
+            }
+            await updateAll()
+            addUserDialog.open = false
+        }
+
+        async function delUser(uid) {
+            await request('POST', api.delUser, `password=${password.value}&uid=${uid}`)
+            await updateAll()
+        }
+
+        async function request(method, api, message) {
+            return new Promise((resolve) => {
+                const xhr = new XMLHttpRequest()
+                xhr.onreadystatechange = () => {
+                    if (xhr.readyState == 4 && xhr.status == 200) {
+                        resolve(xhr.responseText)
+                    }
+                }
+                xhr.open(method, `${url}/${api}`)
+                xhr.send(message)
+            })
+        }
+
+        /**
+         * https://www.w3schools.com/howto/howto_js_sort_table.asp
+         */
+        function sortTable(n) {
+            var table, rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0
+            table = document.getElementById("users")
+            switching = true
+            // Set the sorting direction to ascending:
+            dir = "asc"
+            /* Make a loop that will continue until
+            no switching has been done: */
+            while (switching) {
+                // Start by saying: no switching is done:
+                switching = false
+                rows = table.rows
+                /* Loop through all table rows (except the
+                first, which contains table headers): */
+                for (i = 1; i < (rows.length - 1); i++) {
+                    // Start by saying there should be no switching:
+                    shouldSwitch = false
+                    /* Get the two elements you want to compare,
+                    one from current row and one from the next: */
+                    x = rows[i].getElementsByTagName("TD")[n]
+                    y = rows[i + 1].getElementsByTagName("TD")[n]
+                    /* Check if the two rows should switch place,
+                    based on the direction, asc or desc: */
+                    if (dir == "asc") {
+                        if (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) {
+                            // If so, mark as a switch and break the loop:
+                            shouldSwitch = true
+                            break
+                        }
+                    } else if (dir == "desc") {
+                        if (x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase()) {
+                            // If so, mark as a switch and break the loop:
+                            shouldSwitch = true
+                            break
+                        }
+                    }
+                }
+                if (shouldSwitch) {
+                    /* If a switch has been marked, make the switch
+                    and mark that a switch has been done: */
+                    rows[i].parentNode.insertBefore(rows[i + 1], rows[i])
+                    switching = true
+                    // Each time a switch is done, increase this count by 1:
+                    switchcount++
+                } else {
+                    /* If no switching has been done AND the direction is "asc",
+                    set the direction to "desc" and run the while loop again. */
+                    if (switchcount == 0 && dir == "asc") {
+                        dir = "desc"
+                        switching = true
+                    }
+                }
+            }
+        }
+    </script>
+</body>
+
+</html>
