@@ -81,6 +81,10 @@
             background-color: #ddd;
         }
 
+        #users th:hover {
+            background-color: #3C9F40;
+        }
+
         #users th {
             padding-top: 12px;
             padding-bottom: 12px;
@@ -120,18 +124,24 @@
         </div>
         <dialog id="add-user-dialog">
             <h1>添加用户</h1>
-            <input id="add-user-dialog-uid" type="text" placeholder="UID" /><br />
-            <input id="add-user-dialog-heart-initial" type="text" placeholder="初始爱心数量（留空自动获取）" /><br />
+            <div style="text-align: right;">
+                UID：<input id="add-user-dialog-uid" type="text" placeholder="UID" /><br />
+                初始爱心数量：<input id="add-user-dialog-heart-initial" type="text" placeholder="留空自动获取" /><br />
+            </div>
             <button type="button" onclick="addUser()" class="primary">添加</button>
             <button type="button" onclick="addUserDialog.open = false">取消</button>
         </dialog>
         <dialog id="edit-user-dialog">
             <h1>编辑用户</h1>
-            <input id="edit-user-dialog-uid" type="text" placeholder="UID" /><br />
-            <input id="edit-user-dialog-heart-initial" type="text" placeholder="初始爱心数量" /><br />
-            <input id="edit-user-dialog-heart-abandoned" type="text" placeholder="放弃爱心数量" /><br />
-            <input id="edit-user-dialog-banned" type="checkbox" />已被禁赛<br />
-            <button type="button" onclick="editUser()" class="primary">编辑</button>
+            <div style="text-align: right;">
+                UID：<input id="edit-user-dialog-uid" type="text" placeholder="UID" /><br />
+                初始爱心：<input id="edit-user-dialog-heart-initial" type="text" placeholder="初始爱心数量"
+                    value="${user.heartInitial}" /><br />
+                放弃爱心：<input id="edit-user-dialog-heart-abandoned" type="text" placeholder="放弃爱心数量"
+                    value="${user.heartAbandoned}" /><br />
+            </div>
+            已被禁赛：<input id="edit-user-dialog-banned" type="checkbox" /><br />
+            <button type="button" onclick="confirmEditUser()" class="primary">编辑</button>
             <button type="button" onclick="editUserDialog.open = false">取消</button>
         </dialog>
     </div>
@@ -147,7 +157,6 @@
         const url = '%{serverUrl}%'
         const api = {
             getRankImage: 'api/get-rank-image',
-            getAbandonedHeartsBBCode: 'api/get-abandoned-hearts-bbcode',
             getRegistrationBBCode: 'api/get-registration-bbcode',
             getUsers: 'api/get-users',
             login: 'api/login',
@@ -262,8 +271,10 @@
                 heartAbandoned.innerHTML = user.heartAbandoned
                 heartPresent.innerHTML = user.heartPresent
                 heartAttained.innerHTML = user.heartAttained
-                banned.innerHTML = user.banned
-                operations.innerHTML = `<button type="button" onclick="delUser(${user.uid})" class="warning small">删除</button>`
+                banned.innerHTML = user.banned ? '是' : '否'
+                operations.innerHTML =
+                    `<button type="button" onclick="editUser(${user.uid})" class="primary small">編輯</button>
+<button type="button" onclick="delUser(${user.uid})" class="warning small">删除</button>`
             }
         }
 
@@ -277,7 +288,6 @@
         }
 
         async function addUser() {
-            console.log(addUserDialogHeartInitial.value)
             if (addUserDialogHeartInitial.value !== '') {
                 await request('POST', api.addUser, `password=${password.value}&uid=${
                     addUserDialogUid.value}&heartInitial=${addUserDialogHeartInitial.value}`)
@@ -286,6 +296,23 @@
             }
             await updateAll()
             addUserDialog.open = false
+        }
+
+        function editUser(uid) {
+            const user = users.find(v => v.uid === uid)
+            editUserDialogUid.value = uid
+            editUserDialogHeartInitial.value = user.heartInitial
+            editUserDialogHeartAbandoned.value = user.heartAbandoned
+            editUserDialogBanned.checked = user.banned
+            editUserDialog.open = true
+        }
+
+        async function confirmEditUser() {
+            await request('POST', api.editUser, `password=${password.value}&uid=${editUserDialogUid.value
+                }&heartInitial=${editUserDialogHeartInitial.value}&heartAbandoned=${editUserDialogHeartAbandoned.value
+                }&banned=${editUserDialogBanned.checked}`)
+            await updateAll()
+            editUserDialog.open = false
         }
 
         async function delUser(uid) {

@@ -16,7 +16,6 @@ let rank: RankElement[]
 let rankImage: Buffer
 let rankTime = ''
 let registrationBBCode = ''
-let abandonedHeartBBCode = ''
 
 let lastUpdateTime: Date
 
@@ -62,9 +61,6 @@ async function startup() {
                 } else if (req.url === '/api/get-registration-bbcode') {
                     res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' })
                     res.end(registrationBBCode)
-                } else if (req.url === '/api/get-abandoned-hearts-bbcode') {
-                    res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' })
-                    res.end(abandonedHeartBBCode)
                 } else if (req.url === '/api/get-users') {
                     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' })
                     res.end(JSON.stringify(users))
@@ -132,7 +128,6 @@ async function startup() {
                             parseInt(data.uid as string),
                             parseInt(data.heartInitial as string),
                             parseInt(data.heartAbandoned as string),
-                            (data.heartAbandonedLinks as string).split(/,/g),
                             data.banned === 'true'
                         )
                         res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' })
@@ -261,7 +256,6 @@ async function updateInfo(toUpdateUserInfo = true) {
     updateRankInfo()
     rankImage = await drawRankTable()
     registrationBBCode = getRegistrationBBCode()
-    abandonedHeartBBCode = getAbandonedHeartBBCode()
     writeConfig('users.json', users)
 }
 
@@ -400,26 +394,6 @@ function getRegistrationBBCode() {
     return getBBCodeOfTable(table)
 }
 
-function getAbandonedHeartBBCode() {
-    const table: Table = [
-        ['[b]用户名[/b]', '[b]UID[/b]', '[color=Red][b]放弃数量[/b][/color]', '[b]相关链接[/b]']
-    ]
-    let row: Row = []
-
-    for (const uid in users) {
-        const user = users[uid]
-        if (user.heartAbandoned) {
-            row = [
-                user.username, uid, user.heartAbandoned,
-                user.heartAbandonedLinks.map(v => `[url=${v}]最佳申请帖[/url]`).join('\n')
-            ]
-            table.push(row)
-        }
-    }
-
-    return getBBCodeOfTable(table)
-}
-
 async function addUser(uid: number, heartInitial?: number) {
     const url = `http://www.mcbbs.net/?${uid}`
     const webCode: string = await rp(url)
@@ -440,11 +414,10 @@ function delUser(uid: number) {
 }
 
 function editUser(uid: number, heartInitial: number,
-    heartAbandoned: number, heartAbandonedLinks: string[], banned: boolean) {
+    heartAbandoned: number, banned: boolean) {
     const user = users[uid]
     user.heartInitial = heartInitial
     user.heartAbandoned = heartAbandoned
-    user.heartAbandonedLinks = heartAbandonedLinks
     user.banned = banned
     user.heartAttained = user.heartPresent - user.heartInitial - user.heartAbandoned
     updateInfo(false)
