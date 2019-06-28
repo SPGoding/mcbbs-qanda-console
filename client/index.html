@@ -92,6 +92,13 @@
             background-color: #4CAF50;
             color: white;
         }
+
+        dialog {
+            height: 280px;
+            position: absolute;
+            top: 50%;
+            margin-top: -140px;
+        }
     </style>
 </head>
 
@@ -102,11 +109,11 @@
             UID：<input id="add-user-dialog-uid" type="text" placeholder="UID" /><br />
             初始爱心数量：<input id="add-user-dialog-heart-initial" type="text" placeholder="留空自动获取" /><br />
         </div>
-        <button type="button" onclick="addUser()" class="primary">添加</button>
+        <button type="button" onclick="confirmAddUser()" class="primary">添加</button>
         <button type="button" onclick="addUserDialog.open = false">取消</button>
     </dialog>
     <dialog id="edit-user-dialog">
-        <h1>编辑用户</h1>
+        <h1 id="edit-user-dialog-title">编辑用户</h1>
         <div style="text-align: right;">
             UID：<input id="edit-user-dialog-uid" type="text" placeholder="UID" /><br />
             初始爱心：<input id="edit-user-dialog-heart-initial" type="text" placeholder="初始爱心数量"
@@ -114,8 +121,8 @@
             放弃爱心：<input id="edit-user-dialog-heart-abandoned" type="text" placeholder="放弃爱心数量"
                 value="${user.heartAbandoned}" /><br />
         </div>
-        已被禁赛：<input id="edit-user-dialog-banned" type="checkbox" /><br />
-        <button type="button" onclick="confirmEditUser()" class="primary">编辑</button>
+        禁赛：<input id="edit-user-dialog-banned" type="checkbox" /><br />
+        <button type="button" onclick="confirmEditUser()" class="primary">确定</button>
         <button type="button" onclick="editUserDialog.open = false">取消</button>
     </dialog>
     <div class="card" id="manage">
@@ -128,7 +135,7 @@
         </div>
         <div id="logged-in" style="display: none;">
             <p>欢迎您，问答大区版主，<a href="#" onclick="logout()">点此登出</a>。</p>
-            <button type="button" onclick="addUserDialog.open = true" class="primary">添加用户</button>
+            <button type="button" onclick="addUser()" class="primary">添加用户</button>
             <button type="button" onclick="toggleShowingRankImage()" class="warning">切换公示</button>
             <table id="users">
                 <tr>
@@ -176,6 +183,7 @@
         const addUserDialogUid = document.getElementById('add-user-dialog-uid')
         const addUserDialogHeartInitial = document.getElementById('add-user-dialog-heart-initial')
         const editUserDialog = document.getElementById('edit-user-dialog')
+        const editUserDialogTitle = document.getElementById('edit-user-dialog-title')
         const editUserDialogUid = document.getElementById('edit-user-dialog-uid')
         const editUserDialogHeartInitial = document.getElementById('edit-user-dialog-heart-initial')
         const editUserDialogHeartAbandoned = document.getElementById('edit-user-dialog-heart-abandoned')
@@ -286,7 +294,13 @@
             }
         }
 
-        async function addUser() {
+        function addUser() {
+            addUserDialogUid.value = ''
+            addUserDialogHeartInitial.value = ''
+            addUserDialog.open = true
+        }
+
+        async function confirmAddUser() {
             if (addUserDialogHeartInitial.value !== '') {
                 await request('POST', api.addUser, `password=${password.value}&uid=${
                     addUserDialogUid.value}&heartInitial=${addUserDialogHeartInitial.value}`)
@@ -299,6 +313,7 @@
 
         function editUser(uid) {
             const user = users.find(v => v.uid === uid)
+            editUserDialogTitle.innerHTML = `编辑用户 @${user.username}`
             editUserDialogUid.value = uid
             editUserDialogHeartInitial.value = user.heartInitial
             editUserDialogHeartAbandoned.value = user.heartAbandoned
@@ -376,13 +391,13 @@
                         }
                     } else {
                         if (dir == "asc") {
-                            if (parseFloat(x.innerHTML) > parseFloat(y.innerHTML)) {
+                            if (parseFloat(x.innerHTML) < parseFloat(y.innerHTML)) {
                                 // If so, mark as a switch and break the loop:
                                 shouldSwitch = true
                                 break
                             }
                         } else if (dir == "desc") {
-                            if (parseFloat(x.innerHTML) < parseFloat(y.innerHTML)) {
+                            if (parseFloat(x.innerHTML) > parseFloat(y.innerHTML)) {
                                 // If so, mark as a switch and break the loop:
                                 shouldSwitch = true
                                 break
