@@ -96,7 +96,28 @@
 </head>
 
 <body style="text-align: center;">
-    <br />
+    <dialog id="add-user-dialog">
+        <h1>添加用户</h1>
+        <div style="text-align: right;">
+            UID：<input id="add-user-dialog-uid" type="text" placeholder="UID" /><br />
+            初始爱心数量：<input id="add-user-dialog-heart-initial" type="text" placeholder="留空自动获取" /><br />
+        </div>
+        <button type="button" onclick="addUser()" class="primary">添加</button>
+        <button type="button" onclick="addUserDialog.open = false">取消</button>
+    </dialog>
+    <dialog id="edit-user-dialog">
+        <h1>编辑用户</h1>
+        <div style="text-align: right;">
+            UID：<input id="edit-user-dialog-uid" type="text" placeholder="UID" /><br />
+            初始爱心：<input id="edit-user-dialog-heart-initial" type="text" placeholder="初始爱心数量"
+                value="${user.heartInitial}" /><br />
+            放弃爱心：<input id="edit-user-dialog-heart-abandoned" type="text" placeholder="放弃爱心数量"
+                value="${user.heartAbandoned}" /><br />
+        </div>
+        已被禁赛：<input id="edit-user-dialog-banned" type="checkbox" /><br />
+        <button type="button" onclick="confirmEditUser()" class="primary">编辑</button>
+        <button type="button" onclick="editUserDialog.open = false">取消</button>
+    </dialog>
     <div class="card" id="manage">
         <h1>管理</h1>
         <div id="logged-out">
@@ -122,28 +143,6 @@
                 </tr>
             </table>
         </div>
-        <dialog id="add-user-dialog">
-            <h1>添加用户</h1>
-            <div style="text-align: right;">
-                UID：<input id="add-user-dialog-uid" type="text" placeholder="UID" /><br />
-                初始爱心数量：<input id="add-user-dialog-heart-initial" type="text" placeholder="留空自动获取" /><br />
-            </div>
-            <button type="button" onclick="addUser()" class="primary">添加</button>
-            <button type="button" onclick="addUserDialog.open = false">取消</button>
-        </dialog>
-        <dialog id="edit-user-dialog">
-            <h1>编辑用户</h1>
-            <div style="text-align: right;">
-                UID：<input id="edit-user-dialog-uid" type="text" placeholder="UID" /><br />
-                初始爱心：<input id="edit-user-dialog-heart-initial" type="text" placeholder="初始爱心数量"
-                    value="${user.heartInitial}" /><br />
-                放弃爱心：<input id="edit-user-dialog-heart-abandoned" type="text" placeholder="放弃爱心数量"
-                    value="${user.heartAbandoned}" /><br />
-            </div>
-            已被禁赛：<input id="edit-user-dialog-banned" type="checkbox" /><br />
-            <button type="button" onclick="confirmEditUser()" class="primary">编辑</button>
-            <button type="button" onclick="editUserDialog.open = false">取消</button>
-        </dialog>
     </div>
     <div class="card" id="preview">
         <h1>预览</h1>
