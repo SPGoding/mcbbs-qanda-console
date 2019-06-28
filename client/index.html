@@ -107,6 +107,8 @@
         </div>
         <div id="logged-in" style="display: none;">
             <p>欢迎您，问答大区版主，<a href="#" onclick="logout()">点此登出</a>。</p>
+            <button type="button" onclick="addUserDialog.open = true" class="primary">添加用户</button>
+            <button type="button" onclick="toggleShowingRankImage()" class="warning">切换公示</button>
             <table id="users">
                 <tr>
                     <th onclick="sortTable(0)">UID</th>
@@ -119,8 +121,6 @@
                     <th>操作</th>
                 </tr>
             </table>
-            <button type="button" onclick="addUserDialog.open = true" class="primary">添加用户</button>
-            <button type="button" onclick="toggleShowingRankImage()" class="warning">切换公示</button>
         </div>
         <dialog id="add-user-dialog">
             <h1>添加用户</h1>
