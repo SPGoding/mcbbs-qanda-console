@@ -125,6 +125,17 @@
         <button type="button" onclick="confirmEditUser()" class="primary">确定</button>
         <button type="button" onclick="editUserDialog.open = false">取消</button>
     </dialog>
+    <dialog id="edit-const-dialog">
+        <h1>编辑常数</h1>
+        <div style="text-align: right;">
+            第一名爱心最低要求（满足的第一名用户将显示为红色，设为 -1 禁用此功能）：<input id="edit-const-dialog-minimum-heart" type="text" value="100"/><br />
+            第二至九名爱心最低要求（未满足的用户将显示为灰色，设为 -1 禁用此功能）：<input id="edit-const-dialog-minimum-heart" type="text" value="20"/><br />
+            每两轮统计之间的最短间隔时间（单位：毫秒）：<input id="edit-const-dialog-interval" type="text" value="600000" readonly/><br />
+            每统计两名用户的最短间隔时间（单位：毫秒）：<input id="edit-const-dialog-sleep" type="text" value="5000" readonly/><br />
+        </div>
+        <button type="button" onclick="confirmEditConst()" class="primary">确定</button>
+        <button type="button" onclick="editConstDialog.open = false">取消</button>
+    </dialog>
     <div class="card" id="manage">
         <h1>管理</h1>
         <div id="logged-out">
@@ -135,8 +146,9 @@
         </div>
         <div id="logged-in" style="display: none;">
             <p>欢迎您，问答大区版主，<a href="#" onclick="logout()">点此登出</a>。</p>
+            <button type="button" onclick="editConst()" class="primary">编辑常数</button>
+            <button type="button" onclick="toggleShowingRankImage()" class="warning">切换公示</button><br />
             <button type="button" onclick="addUser()" class="primary">添加用户</button>
-            <button type="button" onclick="toggleShowingRankImage()" class="warning">切换公示</button>
             <table id="users">
                 <tr>
                     <th onclick="sortTable(0)">UID</th>
@@ -153,7 +165,10 @@
     </div>
     <div class="card" id="preview">
         <h1>预览</h1>
-        <h2>爱心统计表格</h2>
+        <h2>爱心数目统计表</h2>
+        <img id="rank-image" />
+        <pre id="rank-image-bbcode">加载中…</pre>
+        <h2>爱心数目折线统计图</h2>
         <img id="rank-image" />
         <pre id="rank-image-bbcode">加载中…</pre>
     </div>
@@ -189,6 +204,8 @@
         const editUserDialogHeartAbandoned = document.getElementById('edit-user-dialog-heart-abandoned')
         const editUserDialogBanned = document.getElementById('edit-user-dialog-banned')
         const usersTable = document.getElementById('users')
+        const editConstDialog = document.getElementById('edit-const-dialog')
+        const editConstDialogMinimumHeart = document.getElementById('edit-const-dialog-minimum-heart')
 
         // Other data
         let users
@@ -327,6 +344,10 @@
                 }&banned=${editUserDialogBanned.checked}`)
             await updateAll()
             editUserDialog.open = false
+        }
+
+        function editConst() {
+            editConstDialog.open = true
         }
 
         async function delUser(uid) {
