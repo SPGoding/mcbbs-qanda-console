@@ -295,7 +295,7 @@ function check() {
 }
 
 async function updateInfo(toUpdateUserInfo = true) {
-    updateTimeInfo = `绘制于 ${getTime()}`
+    updateTimeInfo = `更新于 ${getTime()}`
     console.log(updateTimeInfo)
     if (toUpdateUserInfo) {
         await updateUserInfo()
@@ -304,13 +304,15 @@ async function updateInfo(toUpdateUserInfo = true) {
     if (!lastUpdateTime) {
         lastUpdateTime = new Date()
     }
-    if (lastUpdateTime.getHours() === 0 && lastUpdateTime.getMinutes() === 0) {
-        const today = {}
-        for (const uid in users) {
-            today[uid] = users[uid].heartAttained
+    rank.forEach(v => {
+        const day = getTime(false)
+        if (!history[day]) {
+            history[day] = {}
         }
-        history[getTime(false)] = today
-    }
+        if (!history[day][v.uid]) {
+            history[day][v.uid] = v.heart
+        }
+    })
     writeConfig('history.json', history)
     rankImage = await drawRankImage()
     increaseImage = await drawIncreaseImage()
@@ -464,16 +466,9 @@ async function drawIncreaseImage() {
     const fontHeight = 16
     const canvas = new Canvas(400, 432)
     const ctx = canvas.getContext('2d') as CanvasRenderingContext2D
-    const barMaxHeight = canvas.height - fontHeight * 3
+    const barMaxHeight = canvas.height - fontHeight * 4.5
     const barWidth = canvas.width / 10
     const data = rank.map(v => {
-        if (!history[getTime(false)]) {
-            history[getTime(false)] = {}
-        }
-        if (!history[getTime(false)][v.uid]) {
-            history[getTime(false)][v.uid] = v.heart
-            writeConfig('history.json', history)
-        }
         return { username: users[v.uid].username, delta: v.heart - history[getTime(false)][v.uid] }
     })
     ctx.font = `${fontHeight}px Microsoft Yahei`
@@ -556,9 +551,11 @@ async function drawHeartImage() {
             j++
         }
         ctx.beginPath()
-        ctx.moveTo(points[0][0], points[0][1])
-        for (const point of points) {
-            ctx.lineTo(point[0], point[1])
+        if (points[0]) {
+            ctx.moveTo(points[0][0], points[0][1])
+            for (const point of points) {
+                ctx.lineTo(point[0], point[1])
+            }
         }
         ctx.stroke()
         ctx.fillText(username,
