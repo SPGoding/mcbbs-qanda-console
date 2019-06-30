@@ -130,10 +130,7 @@
         }
 
         dialog {
-            height: 20em;
-            position: absolute;
-            top: 50%;
-            margin-top: -10em;
+            position: fixed;
         }
 
         table {
@@ -168,11 +165,11 @@
     <dialog id="edit-const-dialog">
         <h1>编辑常数</h1>
         <div style="text-align: right;">
-            第一名爱心最低要求（满足的第一名用户将显示为红色，设为 -1 禁用此功能）：<input id="edit-const-dialog-first-place-minimum-heart" type="text"
-                value="100" /><br />
-            第二至九名爱心最低要求（未满足的用户将显示为灰色，设为 -1 禁用此功能）：<input id="edit-const-dialog-minimum-heart" type="text"
-                value="20" /><br />
-            每统计两名用户的最短间隔时间（单位：毫秒）：<input id="edit-const-dialog-interval" type="text" value="10000" readonly /><br />
+            第一名爱心最低要求（满足的第一名用户爱心数将显示为红色，设为 -1 禁用此功能）：<input id="edit-const-dialog-minimum-heart-first-place"
+                type="text" /><br />
+            第二至九名爱心最低要求（未满足的用户所在行将显示为灰色，设为 -1 禁用此功能）：<input id="edit-const-dialog-minimum-heart" type="text" /><br />
+            每两轮统计之间的最短间隔时间（单位：毫秒。不好意思，只能在服务器上改 QwQ）：<input id="edit-const-dialog-interval" type="text" readonly /><br />
+            每统计两名用户的最短间隔时间（单位：毫秒。不好意思，只能在服务器上改 QwQ）：<input id="edit-const-dialog-sleep" type="text" readonly /><br />
         </div>
         <button type="button" onclick="confirmEditConst()" class="primary">确定</button>
         <button type="button" onclick="editConstDialog.open = false">取消</button>
@@ -226,7 +223,7 @@
     <script>
         'use strict'
         // Constants
-        const url = '%{serverUrl}%'
+        const url = '%{serverUrl}%' // This will be replaced by server side.
         const api = {
             getRankImage: 'api/get-rank-image',
             getRegistrationBBCode: 'api/get-registration-bbcode',
@@ -235,7 +232,9 @@
             addUser: 'api/add-user',
             editUser: 'api/edit-user',
             delUser: 'api/del-user',
-            toggleShowingRankImage: 'api/toggle-showing-rank-image'
+            toggleShowingRankImage: 'api/toggle-showing-rank-image',
+            editConsts: 'api/edit-consts',
+            getConsts: 'api/get-consts'
         }
 
         // Get elements
@@ -257,6 +256,9 @@
         const usersTable = document.getElementById('users')
         const editConstDialog = document.getElementById('edit-const-dialog')
         const editConstDialogMinimumHeart = document.getElementById('edit-const-dialog-minimum-heart')
+        const editConstDialogMinimumHeartFirstPlace = document.getElementById('edit-const-dialog-minimum-heart-first-place')
+        const editConstDialogInterval = document.getElementById('edit-const-dialog-interval')
+        const editConstDialogSleep = document.getElementById('edit-const-dialog-sleep')
 
         // Other data
         let users
@@ -310,6 +312,7 @@
         async function updateAll() {
             rankImage.src = `${url}/${api.getRankImage}?t=${new Date().getTime()}`
             await getUsers()
+            await getConsts()
         }
 
         async function getUsers() {
@@ -353,6 +356,14 @@
             }
         }
 
+        async function getConsts() {
+            const result = JSON.parse(await request('GET', api.getConsts))
+            editConstDialogSleep.value = result.sleep
+            editConstDialogInterval.value = result.interval
+            editConstDialogMinimumHeart.value = result.minimumHeart
+            editConstDialogMinimumHeartFirstPlace.value = result.minimumHeartFirstPlace
+        }
+
         async function toggleShowingRankImage() {
             const response = await request('POST', api.toggleShowingRankImage, `password=${password.value}`)
             if (response === 'S') {
@@ -369,14 +380,19 @@
         }
 
         async function confirmAddUser() {
+            let result
             if (addUserDialogHeartInitial.value !== '') {
-                await request('POST', api.addUser, `password=${password.value}&uid=${
+                result = await request('POST', api.addUser, `password=${password.value}&uid=${
                     addUserDialogUid.value}&heartInitial=${addUserDialogHeartInitial.value}`)
             } else {
-                await request('POST', api.addUser, `password=${password.value}&uid=${addUserDialogUid.value}`)
+                result = await request('POST', api.addUser, `password=${password.value}&uid=${addUserDialogUid.value}`)
             }
             await updateAll()
-            addUserDialog.open = false
+            if (result === 'S') {
+                addUserDialog.open = false
+            } else {
+                alert('添加用户时出现错误，请检查 UID 是否正确等')
+            }
         }
 
         function editUser(uid) {
@@ -399,6 +415,17 @@
 
         function editConst() {
             editConstDialog.open = true
+        }
+
+        async function confirmEditConst() {
+            const response = await request('POST', api.editConsts, `password=${password.value}&minimumHeart=${editConstDialogMinimumHeart.value
+                }&minimumHeartFirstPlace=${editConstDialogMinimumHeartFirstPlace.value}`)
+            await updateAll()
+            if (response === 'S') {
+                editConstDialog.open = false
+            } else {
+                alert(`编辑常数时出现错误: ${response}`)
+            }
         }
 
         async function delUser(uid) {

@@ -3,10 +3,13 @@ import * as path from 'path'
 
 export interface Config {
     password: string,
-    interal: number,
+    interval: number,
+    sleep: number,
     port: number,
     host: string,
     protocol: string,
+    minimumHeart: number,
+    minimumHeartFirstPlace: number,
     keyFile?: string,
     certFile?: string
 }
@@ -45,42 +48,55 @@ export async function loadConfig<T>(fileName: string, def?: T): Promise<T> {
     return config
 }
 
+/**
+ * Write config to JSON file.
+ * @param fileName Configuration file name. e.g. `config.json`
+ * @param content The config object.
+ */
 export async function writeConfig<T extends object>(fileName: string, content: T) {
     const filePath = path.join(__dirname, fileName)
 
-    fs.writeJson(filePath, content)
+    fs.writeJson(filePath, content, { spaces: 4 })
 }
 
 function getStringBetweenStrings(input: string, start: string, end: string) {
-    return input.slice(input.indexOf(start) + start.length, input.indexOf(end))
+    if (input.indexOf(start) !== -1 && input.indexOf(end) !== -1) {
+        return input.slice(input.indexOf(start) + start.length, input.indexOf(end))
+    } else {
+        throw `Failed to fine string between '${start}' and '${end}' in '${input}'.`
+    }
 }
 
 export function getUserViaWebCode(webCode: string, oldUser?: User): User {
-    const username = getStringBetweenStrings(webCode, '<title>', '的个人资料 -  Minecraft(我的世界)中文论坛 - </title>')
-    const heartPresent = parseInt(getStringBetweenStrings(webCode, '<li><em>爱心</em>', ' 心</li>'))
+    try {
+        const username = getStringBetweenStrings(webCode, '<title>', '的个人资料 -  Minecraft(我的世界)中文论坛 - </title>')
+        const heartPresent = parseInt(getStringBetweenStrings(webCode, '<li><em>爱心</em>', ' 心</li>'))
 
-    if (!oldUser) {
-        oldUser = {
-            banned: false,
-            heartAbandoned: 0,
-            heartAbandonedLinks: [],
-            heartInitial: heartPresent,
-            heartAttained: NaN, // Won't be inherited.
-            heartPresent: NaN, // Won't be inherited.
-            username: '' // Won't be inherited.
+        if (!oldUser) {
+            oldUser = {
+                banned: false,
+                heartAbandoned: 0,
+                heartAbandonedLinks: [],
+                heartInitial: heartPresent,
+                heartAttained: NaN, // Won't be inherited.
+                heartPresent: NaN, // Won't be inherited.
+                username: '' // Won't be inherited.
+            }
         }
-    }
 
-    let { banned, heartAbandoned, heartAbandonedLinks, heartInitial } = oldUser
+        let { banned, heartAbandoned, heartAbandonedLinks, heartInitial } = oldUser
 
-    return {
-        username,
-        heartInitial,
-        heartAbandoned,
-        heartAbandonedLinks,
-        heartPresent,
-        heartAttained: heartPresent - heartInitial - heartAbandoned,
-        banned
+        return {
+            username,
+            heartInitial,
+            heartAbandoned,
+            heartAbandonedLinks,
+            heartPresent,
+            heartAttained: heartPresent - heartInitial - heartAbandoned,
+            banned
+        }
+    } catch {
+        throw 'Invalid user page.'
     }
 }
 
@@ -102,4 +118,10 @@ export function getBBCodeOfTable(table: Table) {
     }
     ans += tableSuffix
     return ans
+}
+
+export function sleep(ms: number) {
+    return new Promise<void>(resolve => {
+        setTimeout(resolve, ms)
+    })
 }

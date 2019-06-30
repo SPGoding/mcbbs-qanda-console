@@ -7,9 +7,9 @@ import * as qs from 'querystring'
 import * as md5 from 'md5'
 import * as read from 'read'
 import { Canvas, loadImage } from 'canvas'
-import { Users, loadConfig, Config, RankElement, getUserViaWebCode, writeConfig, getBBCodeOfTable, Table, Row } from './utils'
+import { Users, loadConfig, Config, RankElement, getUserViaWebCode, writeConfig, getBBCodeOfTable, Table, Row, sleep } from './utils'
 
-let config: Config = { password: '', interal: NaN, port: NaN, host: '', protocol: 'http' }
+let config: Config = { password: '', interval: NaN, port: NaN, host: '', protocol: 'http', minimumHeart: NaN, minimumHeartFirstPlace: NaN, sleep: NaN }
 let users: Users = {}
 let rank: RankElement[]
 
@@ -38,13 +38,165 @@ let lastUpdateTime: Date
 //  * 每增加一贡献所需爱心
 //  */
 // const ctbHeart = 50
-const minHeart = 20
 
 let stopShowingRankImage = false
 
+async function requestListener(req: http.IncomingMessage, res: http.ServerResponse) {
+    if (req.method === 'GET') {
+        if (req.url && req.url.split('?')[0] === '/api/get-rank-image') {
+            res.writeHead(200, { 'Content-Type': 'image/png' });
+            res.end(rankImage);
+        }
+        else if (req.url === '/api/get-registration-bbcode') {
+            res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
+            res.end(registrationBBCode);
+        }
+        else if (req.url === '/api/get-users') {
+            res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+            res.end(JSON.stringify(users));
+        }
+        else if (req.url === '/api/get-consts') {
+            res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+            res.end(JSON.stringify({
+                minimumHeart: config.minimumHeart, minimumHeartFirstPlace: config.minimumHeartFirstPlace,
+                interval: config.interval, sleep: config.sleep
+            }));
+        }
+        else if (req.url === '/favicon.ico') {
+            const filePath = path.join(__dirname, '../../client/favicon.ico');
+            res.writeHead(200, { 'Content-Type': 'image/x-icon' });
+            res.end(await fs.readFile(filePath));
+        }
+        else {
+            const filePath = path.join(__dirname, '../../client', 'index.html');
+            let content = await fs.readFile(filePath, 'utf8');
+            content = content.replace(/%\{serverUrl}%/g, `${config.protocol}://${config.host}:${config.port}`);
+            res.writeHead(200, { 'Content-Type': `text/html; charset=utf-8` });
+            res.end(content);
+        }
+    } else if (req.method === 'POST') {
+        if (req.url !== '/api/add-user' && req.url !== '/api/del-user' && req.url !== '/api/edit-user'
+            && req.url !== '/api/login' && req.url !== '/api/toggle-showing-rank-image'
+            && req.url !== '/api/edit-consts') {
+            res.writeHead(404, 'Resource Not Found', { 'Content-Type': 'text/html' });
+            res.end(getHtmlFromCode(404));
+            return;
+        }
+        if (req.url === '/api/add-user') {
+            const data = await handlePost(req, res);
+            if (!data.password || md5(data.password.toString()) !== config.password) {
+                res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' });
+                res.end(getHtmlFromCode(400));
+                return;
+            }
+            if (data.uid !== undefined) {
+                let result: boolean;
+                if (data.heartInitial !== undefined) {
+                    result = await addUser(parseInt(data.uid as string), parseInt(data.heartInitial as string));
+                }
+                else {
+                    result = await addUser(parseInt(data.uid as string));
+                }
+                if (result) {
+                    res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
+                    res.end('S');
+                }
+                else {
+                    res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
+                    res.end('E');
+                }
+            }
+            else {
+                res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' });
+                res.end(getHtmlFromCode(400));
+            }
+        }
+        else if (req.url === '/api/del-user') {
+            const data = await handlePost(req, res);
+            if (!data.password || md5(data.password.toString()) !== config.password) {
+                res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' });
+                res.end(getHtmlFromCode(400));
+                return;
+            }
+            if (data.uid !== undefined) {
+                delUser(parseInt(data.uid as string));
+                res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+                res.end(getHtmlFromCode(200));
+            }
+            else {
+                res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' });
+                res.end(getHtmlFromCode(400));
+            }
+        }
+        else if (req.url === '/api/edit-user') {
+            const data = await handlePost(req, res);
+            if (!data.password || md5(data.password.toString()) !== config.password) {
+                res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' });
+                res.end(getHtmlFromCode(400));
+                return;
+            }
+            if (data.uid !== undefined && data.heartInitial !== undefined && data.heartAbandoned !== undefined && data.banned !== undefined) {
+                editUser(parseInt(data.uid as string), parseInt(data.heartInitial as string), parseInt(data.heartAbandoned as string), data.banned === 'true');
+                res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+                res.end(getHtmlFromCode(200));
+            }
+            else {
+                res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' });
+                res.end(getHtmlFromCode(400));
+            }
+        }
+        else if (req.url === '/api/login') {
+            const data = await handlePost(req, res);
+            if (data.password && md5(data.password.toString()) === config.password) {
+                res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
+                res.end('S');
+            }
+            else {
+                res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
+                res.end('E');
+            }
+        }
+        else if (req.url === '/api/toggle-showing-rank-image') {
+            const data = await handlePost(req, res);
+            if (data.password && md5(data.password.toString()) === config.password) {
+                stopShowingRankImage = !stopShowingRankImage;
+                rankImage = await drawRankTable();
+                res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
+                res.end('S');
+            }
+            else {
+                res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' });
+                res.end(getHtmlFromCode(400));
+            }
+        }
+        else if (req.url === '/api/edit-consts') {
+            const data = await handlePost(req, res);
+            if (data.password && md5(data.password.toString()) === config.password) {
+                if (data.minimumHeart && data.minimumHeartFirstPlace) {
+                    config.minimumHeart = parseInt(data.minimumHeart as string);
+                    config.minimumHeartFirstPlace = parseInt(data.minimumHeartFirstPlace as string);
+                    await writeConfig<Config>('config.json', config);
+                    rankImage = await drawRankTable();
+                    res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
+                    res.end('S');
+                }
+                else {
+                    res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+                    res.end('Expected constants');
+                }
+            }
+            else {
+                res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' });
+                res.end(getHtmlFromCode(400));
+            }
+        }
+    }
+}
+
 async function startup() {
     try {
-        config = await loadConfig<Config>('config.json', { password: '', interal: 600000, port: 80, host: '', protocol: 'http' })
+        config = await loadConfig<Config>('config.json',
+            { password: '', sleep: 500, interval: 600000, port: 80, host: '', protocol: 'http', minimumHeart: 30, minimumHeartFirstPlace: 100 })
         users = await loadConfig<Users>('users.json', {})
 
         if (config.password === '') {
@@ -52,113 +204,6 @@ async function startup() {
         }
 
         setInterval(check, 15000)
-
-        const requestListener = async (req: http.IncomingMessage, res: http.ServerResponse) => {
-            if (req.method === 'GET') {
-                if (req.url && req.url.split('?')[0] === '/api/get-rank-image') {
-                    res.writeHead(200, { 'Content-Type': 'image/png' })
-                    res.end(rankImage)
-                } else if (req.url === '/api/get-registration-bbcode') {
-                    res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' })
-                    res.end(registrationBBCode)
-                } else if (req.url === '/api/get-users') {
-                    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' })
-                    res.end(JSON.stringify(users))
-                } else if (req.url === '/favicon.ico') {
-                    const filePath = path.join(__dirname, '../../client/favicon.ico')
-                    res.writeHead(200, { 'Content-Type': 'image/x-icon' })
-                    res.end(await fs.readFile(filePath))
-                } else {
-                    const filePath = path.join(__dirname, '../../client', 'index.html')
-                    let content = await fs.readFile(filePath, 'utf8')
-                    content = content.replace(/%\{serverUrl}%/g, `${config.protocol}://${config.host}:${config.port}`)
-                    res.writeHead(200, { 'Content-Type': `text/html; charset=utf-8` })
-                    res.end(content)
-                }
-            } else if (req.method === 'POST') {
-                if (req.url !== '/api/add-user' && req.url !== '/api/del-user' && req.url !== '/api/edit-user'
-                    && req.url !== '/api/login' && req.url !== '/api/toggle-showing-rank-image') {
-                    res.writeHead(404, 'Resource Not Found', { 'Content-Type': 'text/html' })
-                    res.end(getHtmlFromCode(404))
-                    return
-                }
-                if (req.url === '/api/add-user') {
-                    const data = await handlePost(req, res)
-                    if (!data.password || md5(data.password.toString()) !== config.password) {
-                        res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' })
-                        res.end(getHtmlFromCode(400))
-                        return
-                    }
-                    if (data.uid !== undefined) {
-                        if (data.heartInitial !== undefined) {
-                            await addUser(parseInt(data.uid as string), parseInt(data.heartInitial as string))
-                        } else {
-                            await addUser(parseInt(data.uid as string))
-                        }
-                        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' })
-                        res.end(getHtmlFromCode(200))
-                    } else {
-                        res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' })
-                        res.end(getHtmlFromCode(400))
-                    }
-                } else if (req.url === '/api/del-user') {
-                    const data = await handlePost(req, res)
-                    if (!data.password || md5(data.password.toString()) !== config.password) {
-                        res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' })
-                        res.end(getHtmlFromCode(400))
-                        return
-                    }
-                    if (data.uid !== undefined) {
-                        delUser(parseInt(data.uid as string))
-                        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' })
-                        res.end(getHtmlFromCode(200))
-                    } else {
-                        res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' })
-                        res.end(getHtmlFromCode(400))
-                    }
-                } else if (req.url === '/api/edit-user') {
-                    const data = await handlePost(req, res)
-                    if (!data.password || md5(data.password.toString()) !== config.password) {
-                        res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' })
-                        res.end(getHtmlFromCode(400))
-                        return
-                    }
-                    if (data.uid !== undefined && data.heartInitial !== undefined && data.heartAbandoned !== undefined && data.banned !== undefined) {
-                        editUser(
-                            parseInt(data.uid as string),
-                            parseInt(data.heartInitial as string),
-                            parseInt(data.heartAbandoned as string),
-                            data.banned === 'true'
-                        )
-                        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' })
-                        res.end(getHtmlFromCode(200))
-                    } else {
-                        res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' })
-                        res.end(getHtmlFromCode(400))
-                    }
-                } else if (req.url === '/api/login') {
-                    const data = await handlePost(req, res)
-                    if (data.password && md5(data.password.toString()) === config.password) {
-                        res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' })
-                        res.end('S')
-                    } else {
-                        res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' })
-                        res.end('E')
-                    }
-                } else if (req.url === '/api/toggle-showing-rank-image') {
-                    const data = await handlePost(req, res)
-                    if (data.password && md5(data.password.toString()) === config.password) {
-                        stopShowingRankImage = !stopShowingRankImage
-                        rankImage = await drawRankTable()
-                        res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' })
-                        res.end('S')
-                    } else {
-                        res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' })
-                        res.end(getHtmlFromCode(400))
-                    }
-                }
-            }
-        }
 
         if (config.protocol === 'https' && config.keyFile && config.certFile) {
             https
@@ -188,6 +233,7 @@ async function startup() {
 }
 
 setImmediate(startup)
+
 
 async function setPassword() {
     return new Promise<void>((resolve, reject) => {
@@ -240,7 +286,7 @@ function check() {
         updateInfo()
     } else {
         const now = new Date()
-        if (now.getMinutes() % (config.interal / 60000) === 0 && now.getTime() - lastUpdateTime.getTime() >= config.interal - 5000) {
+        if (now.getMinutes() % (config.interval / 60000) === 0 && now.getTime() - lastUpdateTime.getTime() >= config.interval - 5000) {
             updateInfo()
             lastUpdateTime = now
         }
@@ -260,18 +306,19 @@ async function updateInfo(toUpdateUserInfo = true) {
 }
 
 async function updateUserInfo() {
-    for (const uid in users) {
-        try {
+    try {
+        for (const uid in users) {
             const user = users[uid]
             if (!user.banned) {
                 const url = `http://www.mcbbs.net/?${uid}`
                 const webCode: string = await rp(url)
                 const userUpdated = getUserViaWebCode(webCode, user)
                 users[uid] = userUpdated
+                await sleep(config.sleep)
             }
-        } catch (e) {
-            console.error(`Updating info error: '${e}'.`)
         }
+    } catch (e) {
+        console.error(`Updating info error: '${e}'.`)
     }
 }
 
@@ -345,17 +392,26 @@ async function drawRankTable() {
 
         let rowNumber = 1
         for (const row of table) {
-            let columnNumber = 0
-            if (row[2] < minHeart) {
-                ctx.fillStyle = '#666666'
-            } else {
-                ctx.fillStyle = '#000000'
+            let cellNumber = 0
+            let heartColor = '#000000'
+            let otherColor = '#000000'
+            if (row[2] < config.minimumHeart) {
+                otherColor = '#666666'
+                heartColor = '#666666'
+            }
+            if (rowNumber === 1 && row[2] >= config.minimumHeartFirstPlace) {
+                heartColor = '#ff0000'
             }
             for (const cell of row) {
+                if (cellNumber === 2) {
+                    ctx.fillStyle = heartColor
+                } else {
+                    ctx.fillStyle = otherColor
+                }
                 ctx.fillText(cell.toString(),
-                    columnLeftMargins[columnNumber] + (columnWidths[columnNumber] - ctx.measureText(cell.toString()).width) / 2,
+                    columnLeftMargins[cellNumber] + (columnWidths[cellNumber] - ctx.measureText(cell.toString()).width) / 2,
                     rowNumber * rowHeight + fontHeight)
-                columnNumber++
+                cellNumber++
             }
             rowNumber++
         }
@@ -395,17 +451,22 @@ function getRegistrationBBCode() {
 }
 
 async function addUser(uid: number, heartInitial?: number) {
-    const url = `http://www.mcbbs.net/?${uid}`
-    const webCode: string = await rp(url)
-    const user = getUserViaWebCode(webCode)
+    try {
+        const url = `http://www.mcbbs.net/?${uid}`
+        const webCode: string = await rp(url)
+        const user = getUserViaWebCode(webCode)
 
-    if (heartInitial !== undefined) {
-        user.heartInitial = heartInitial
-        user.heartAttained = user.heartPresent - user.heartInitial - user.heartAbandoned
+        if (heartInitial !== undefined) {
+            user.heartInitial = heartInitial
+            user.heartAttained = user.heartPresent - user.heartInitial - user.heartAbandoned
+        }
+
+        users[uid] = user
+        updateInfo(false)
+    } catch (_) {
+        return false
     }
-
-    users[uid] = user
-    updateInfo(false)
+    return true
 }
 
 function delUser(uid: number) {
