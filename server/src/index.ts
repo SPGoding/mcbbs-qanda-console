@@ -248,7 +248,7 @@ function check() {
 }
 
 async function updateInfo(toUpdateUserInfo = true) {
-    rankTime = `统计于 ${getTime()}`
+    rankTime = `绘制于 ${getTime()}`
     console.log(rankTime)
     if (toUpdateUserInfo) {
         await updateUserInfo()

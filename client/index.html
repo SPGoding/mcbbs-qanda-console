@@ -3,32 +3,42 @@
 
 <head>
     <title>MCBBS 问答版月度活动管理后台</title>
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <style>
+        html {
+            background-color: #fefefe;
+        }
+
+        a {
+            color: #0077aa;
+        }
+
         #manage,
         #preview {
-            display: inline-block;
-            *display: inline;
-            zoom: 1;
-            vertical-align: top;
-            font-size: 12px;
-            width: 49%;
+            font-size: 16px;
+            max-width: 1024px;
+            min-width: 60%;
+            margin: 0 auto;
+            padding: 1em
         }
 
         .card {
-            box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
+            box-shadow: 0 4px 0.5em 0 rgba(0, 0, 0, 0.2);
             transition: 0.3s;
-            padding: 2px;
+            padding: 1em;
         }
 
         .card:hover {
-            box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.2);
+            box-shadow: 0 8px 1em 0 rgba(0, 0, 0, 0.2);
         }
 
         pre {
             background: #F8F8FF;
             border: black dashed 1px;
-            padding: 6px;
-            margin: 8px;
+            padding: 0.5em;
+            margin-bottom: 1em;
+            overflow-x: auto;
         }
 
         button {
@@ -41,20 +51,48 @@
             margin: 8px;
         }
 
+        button {
+            background-color: #DDDDDD;
+        }
+
+        button:hover {
+            background-color: #EDEDED;
+        }
+
+        button:active {
+            background-color: #CDCDCD;
+        }
+
         .primary {
             background-color: #008CBA;
+        }
+
+        .primary:hover {
+            background-color: #109CBA;
+        }
+
+        .primary:active {
+            background-color: #007C9A;
         }
 
         .warning {
             background-color: #81157d;
         }
 
+        .warning:hover {
+            background-color: #91258d;
+        }
+
+        .warning:active {
+            background-color: #71056d;
+        }
+
         .small {
-            padding: 8px 24px;
+            font-size: 12px;
+            padding: 1em;
+            margin: 0.5em 0;
             text-align: center;
             display: inline-block;
-            font-size: 12px;
-            margin: 2px;
         }
 
         #rank-image {
@@ -70,7 +108,6 @@
         #users td,
         #users th {
             border: 1px solid #ddd;
-            padding: 8px;
         }
 
         #users tr:nth-child(even) {
@@ -86,18 +123,21 @@
         }
 
         #users th {
-            padding-top: 12px;
-            padding-bottom: 12px;
-            text-align: left;
+            padding-top: 1em;
+            padding-bottom: 1em;
             background-color: #4CAF50;
             color: white;
         }
 
         dialog {
-            height: 280px;
+            height: 20em;
             position: absolute;
             top: 50%;
-            margin-top: -140px;
+            margin-top: -10em;
+        }
+
+        table {
+            table-layout: fixed;
         }
     </style>
 </head>
@@ -128,10 +168,11 @@
     <dialog id="edit-const-dialog">
         <h1>编辑常数</h1>
         <div style="text-align: right;">
-            第一名爱心最低要求（满足的第一名用户将显示为红色，设为 -1 禁用此功能）：<input id="edit-const-dialog-minimum-heart" type="text" value="100"/><br />
-            第二至九名爱心最低要求（未满足的用户将显示为灰色，设为 -1 禁用此功能）：<input id="edit-const-dialog-minimum-heart" type="text" value="20"/><br />
-            每两轮统计之间的最短间隔时间（单位：毫秒）：<input id="edit-const-dialog-interval" type="text" value="600000" readonly/><br />
-            每统计两名用户的最短间隔时间（单位：毫秒）：<input id="edit-const-dialog-sleep" type="text" value="5000" readonly/><br />
+            第一名爱心最低要求（满足的第一名用户将显示为红色，设为 -1 禁用此功能）：<input id="edit-const-dialog-first-place-minimum-heart" type="text"
+                value="100" /><br />
+            第二至九名爱心最低要求（未满足的用户将显示为灰色，设为 -1 禁用此功能）：<input id="edit-const-dialog-minimum-heart" type="text"
+                value="20" /><br />
+            每统计两名用户的最短间隔时间（单位：毫秒）：<input id="edit-const-dialog-interval" type="text" value="10000" readonly /><br />
         </div>
         <button type="button" onclick="confirmEditConst()" class="primary">确定</button>
         <button type="button" onclick="editConstDialog.open = false">取消</button>
@@ -168,9 +209,19 @@
         <h2>爱心数目统计表</h2>
         <img id="rank-image" />
         <pre id="rank-image-bbcode">加载中…</pre>
-        <h2>爱心数目折线统计图</h2>
-        <img id="rank-image" />
-        <pre id="rank-image-bbcode">加载中…</pre>
+        <hr />
+        <h2>今日爱心增量条形统计图</h2>
+        <!-- <img id="increasement-image" /> -->
+        <pre id="increasement-image-bbcode">制作中…</pre>
+        <hr />
+        <h2>近日爱心数目折线统计图</h2>
+        <!-- <img id="heart-image" /> -->
+        <pre id="heart-image-bbcode">制作中…</pre>
+        <hr />
+        <h2>一吨特性随意增加...</h2>
+        啥都不要，只要 FHC 小姐姐的抱抱！<br />
+        MCBBS: <a href="http://www.mcbbs.net/?2444378" target="_blank">@SPGoding</a><br />
+        GitHub: <a href="https://github.com/SPGoding/mcbbs-qanda-console" target="_blank">mcbbs-qanda-console</a>
     </div>
     <script>
         'use strict'
