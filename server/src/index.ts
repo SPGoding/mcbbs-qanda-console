@@ -541,13 +541,13 @@ async function drawHeartImage() {
     let i = 0
     let { r, g, b } = { r: 0, g: 0, b: 0 }
     for (const { username, hearts } of data) {
-        b += 127
+        b += 50
         if (b > 255) {
-            g += 127
+            g += 50
             b = 0
         }
         if (b > 255) {
-            r += 127
+            r += 50
             g = 0
         }
         ctx.strokeStyle = ctx.fillStyle = `#${r.toString(16)}${g.toString(16)}${b.toString(16)}`
