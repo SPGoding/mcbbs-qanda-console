@@ -132,21 +132,10 @@ export function sleep(ms: number) {
     })
 }
 
-export function drawLine(ctx: CanvasRenderingContext2D, startX: number, startY: number,
-    endX: number, endY: number, color: string | CanvasGradient | CanvasPattern) {
-    ctx.save();
-    ctx.strokeStyle = color;
-    ctx.beginPath();
-    ctx.moveTo(startX, startY);
-    ctx.lineTo(endX, endY);
-    ctx.stroke();
-    ctx.restore();
-}
-
 export function drawBar(ctx: CanvasRenderingContext2D, upperLeftCornerX: number,
     upperLeftCornerY: number, width: number, height: number, color: string | CanvasGradient | CanvasPattern) {
-    ctx.save();
-    ctx.fillStyle = color;
-    ctx.fillRect(upperLeftCornerX, upperLeftCornerY, width, height);
-    ctx.restore();
+    ctx.save()
+    ctx.fillStyle = color
+    ctx.fillRect(upperLeftCornerX, upperLeftCornerY, width, height)
+    ctx.restore()
 }

@@ -510,23 +510,12 @@ async function drawIncreaseImage() {
 }
 
 async function drawHeartImage() {
-    const colors = [
-        '#2db7fc',
-        '#fcda2d',
-        '#732dfc',
-        '#4ffc2d',
-        '#fc2db7',
-        '#fcda2d',
-        '#fc732d',
-        '#2d4ffc',
-        '#00787e',
-        '#7e0078'
-    ]
     const fontHeight = 16
-    const canvas = new Canvas(400, 400)
+    const canvas = new Canvas(500, 400)
+    const usernameRegionWidth = 100
     const ctx = canvas.getContext('2d') as CanvasRenderingContext2D
     const pointMaxY = canvas.height - fontHeight * 3
-    const pointSpace = canvas.width / 11
+    const pointSpace = (canvas.width - usernameRegionWidth) / 11
     const data = rank.map(v => {
         if (!history[getTime(false)]) {
             history[getTime(false)] = {}
@@ -550,19 +539,38 @@ async function drawHeartImage() {
         }
     }
     let i = 0
+    let { r, g, b } = { r: 0, g: 0, b: 0 }
     for (const { username, hearts } of data) {
-        ctx.fillStyle = colors[i % 10]
-        for (const heart of hearts) {
-            // Drawing bars
-            const pointY = pointMaxY * heart / heartMax
-            ctx.stroke(ctx, i * pointSpace, barMaxHeight - pointY + fontHeight * 1.5, pointSpace, pointY, colors[i % 10])
-            ctx.fillText(delta.toString(),
-                i * pointSpace + pointSpace / 2 - ctx.measureText(delta.toString()).width / 2,
-                fontHeight)
-            ctx.fillText(username.slice(0, 3),
-                i * pointSpace + pointSpace / 2 - ctx.measureText(username.slice(0, 3)).width / 2,
-                canvas.height - fontHeight * 2)
+        b += 127
+        if (b > 255) {
+            g += 127
+            b = 0
         }
+        if (b > 255) {
+            r += 127
+            g = 0
+        }
+        ctx.strokeStyle = ctx.fillStyle = `#${r.toString(16)}${g.toString(16)}${b.toString(16)}`
+        let points: number[][] = []
+        let j = 0
+        for (const heart of hearts) {
+            const pointX = (j + 0.5) * pointSpace
+            const pointY = pointMaxY - pointMaxY * heart / heartMax + fontHeight * 1.5
+            const point = [pointX, pointY]
+            points.push(point)
+            ctx.fillText(heart.toString(),
+                pointX - ctx.measureText(heart.toString()).width / 2, pointY + fontHeight)
+            j++
+        }
+        ctx.beginPath()
+        ctx.moveTo(points[0][0], points[0][1])
+        for (const point of points) {
+            ctx.lineTo(point[0], point[1])
+        }
+        ctx.stroke()
+        ctx.fillText(username,
+            canvas.width - usernameRegionWidth / 2 - ctx.measureText(username).width / 2,
+            (i + 1.5) * fontHeight)
         i++
     }
     ctx.fillStyle = '#81157d'
