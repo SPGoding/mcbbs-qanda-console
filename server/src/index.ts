@@ -395,11 +395,11 @@ async function drawRankTable() {
             let cellNumber = 0
             let heartColor = '#000000'
             let otherColor = '#000000'
-            if (row[2] < config.minimumHeart) {
+            if (config.minimumHeart !== -1 && row[2] < config.minimumHeart) {
                 otherColor = '#666666'
                 heartColor = '#666666'
             }
-            if (rowNumber === 1 && row[2] >= config.minimumHeartFirstPlace) {
+            if (config.minimumHeartFirstPlace !== -1 && rowNumber === 1 && row[2] >= config.minimumHeartFirstPlace) {
                 heartColor = '#ff0000'
             }
             for (const cell of row) {
