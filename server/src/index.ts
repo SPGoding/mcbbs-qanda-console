@@ -465,11 +465,10 @@ async function drawIncreaseImage() {
         '#7e0078'
     ]
     const fontHeight = 16
-    const canvas = new Canvas(400, 400)
+    const canvas = new Canvas(400, 432)
     const ctx = canvas.getContext('2d') as CanvasRenderingContext2D
     const barMaxHeight = canvas.height - fontHeight * 3
     const barWidth = canvas.width / 10
-    const barSpace = 0
     const data = rank.map(v => {
         if (!history[getTime(false)]) {
             history[getTime(false)] = {}
@@ -493,25 +492,84 @@ async function drawIncreaseImage() {
         // Drawing bars
         const barHeight = barMaxHeight * delta / deltaMax
         ctx.fillStyle = colors[i]
-        drawBar(ctx, i * (barSpace + barWidth), barMaxHeight - barHeight + fontHeight * 1.5, barWidth, barHeight, colors[i])
+        drawBar(ctx, i * barWidth, barMaxHeight - barHeight + fontHeight * 1.5, barWidth, barHeight, colors[i])
         ctx.fillText(delta.toString(),
-            i * (barSpace + barWidth) + barWidth / 2 - ctx.measureText(delta.toString()).width / 2,
+            i * barWidth + barWidth / 2 - ctx.measureText(delta.toString()).width / 2,
             fontHeight)
         ctx.fillText(username.slice(0, 3),
-            i * (barSpace + barWidth) + barWidth / 2 - ctx.measureText(username.slice(0, 3)).width / 2,
-            canvas.height - fontHeight / 2)
+            i * barWidth + barWidth / 2 - ctx.measureText(username.slice(0, 3)).width / 2,
+            canvas.height - fontHeight * 2)
         i++
     }
+    ctx.fillStyle = '#81157d'
+    ctx.fillText(getTime(false),
+        (canvas.width - ctx.measureText(getTime(false)).width) / 2,
+        canvas.height - fontHeight * 0.5)
 
     return canvas.toBuffer('image/png')
 }
 
 async function drawHeartImage() {
-    const canvas = new Canvas(554, 260)
+    const colors = [
+        '#2db7fc',
+        '#fcda2d',
+        '#732dfc',
+        '#4ffc2d',
+        '#fc2db7',
+        '#fcda2d',
+        '#fc732d',
+        '#2d4ffc',
+        '#00787e',
+        '#7e0078'
+    ]
+    const fontHeight = 16
+    const canvas = new Canvas(400, 400)
     const ctx = canvas.getContext('2d') as CanvasRenderingContext2D
-    ctx.font = '16px Microsoft Yahei'
-    ctx.fillStyle = '#000000'
-    ctx.fillText('制作中', 32, 32)
+    const pointMaxY = canvas.height - fontHeight * 3
+    const pointSpace = canvas.width / 11
+    const data = rank.map(v => {
+        if (!history[getTime(false)]) {
+            history[getTime(false)] = {}
+        }
+        if (!history[getTime(false)][v.uid]) {
+            history[getTime(false)][v.uid] = v.heart
+            writeConfig('history.json', history)
+        }
+        const ans: number[] = []
+        for (const day in history) {
+            const element = history[day]
+            ans.push(element[v.uid])
+        }
+        return { username: users[v.uid].username, hearts: ans.slice(-7) }
+    })
+    ctx.font = `${fontHeight}px Microsoft Yahei`
+    let heartMax = 0
+    for (const { hearts } of data) {
+        for (const heart of hearts) {
+            heartMax = Math.max(heartMax, heart)
+        }
+    }
+    let i = 0
+    for (const { username, hearts } of data) {
+        ctx.fillStyle = colors[i % 10]
+        for (const heart of hearts) {
+            // Drawing bars
+            const pointY = pointMaxY * heart / heartMax
+            ctx.stroke(ctx, i * pointSpace, barMaxHeight - pointY + fontHeight * 1.5, pointSpace, pointY, colors[i % 10])
+            ctx.fillText(delta.toString(),
+                i * pointSpace + pointSpace / 2 - ctx.measureText(delta.toString()).width / 2,
+                fontHeight)
+            ctx.fillText(username.slice(0, 3),
+                i * pointSpace + pointSpace / 2 - ctx.measureText(username.slice(0, 3)).width / 2,
+                canvas.height - fontHeight * 2)
+        }
+        i++
+    }
+    ctx.fillStyle = '#81157d'
+    ctx.fillText(getTime(false),
+        (canvas.width - ctx.measureText(getTime(false)).width) / 2,
+        canvas.height - fontHeight * 0.5)
+
     return canvas.toBuffer('image/png')
 }
 
