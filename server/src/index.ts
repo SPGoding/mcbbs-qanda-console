@@ -7,15 +7,18 @@ import * as qs from 'querystring'
 import * as md5 from 'md5'
 import * as read from 'read'
 import { Canvas, loadImage } from 'canvas'
-import { Users, loadConfig, Config, RankElement, getUserViaWebCode, writeConfig, getBBCodeOfTable, Table, Row, sleep } from './utils'
+import { History, Users, loadConfig, Config, RankElement, getUserViaWebCode, writeConfig, getBBCodeOfTable, Table, Row, sleep, drawBar } from './utils'
 
 let config: Config = { password: '', interval: NaN, port: NaN, host: '', protocol: 'http', minimumHeart: NaN, minimumHeartFirstPlace: NaN, sleep: NaN }
 let users: Users = {}
+let history: History = {}
 let rank: RankElement[]
 
 let rankImage: Buffer
-let rankTime = ''
+let updateTimeInfo = ''
 let registrationBBCode = ''
+let increaseImage: Buffer
+let heartImage: Buffer
 
 let lastUpdateTime: Date
 
@@ -46,28 +49,29 @@ async function requestListener(req: http.IncomingMessage, res: http.ServerRespon
         if (req.url && req.url.split('?')[0] === '/api/get-rank-image') {
             res.writeHead(200, { 'Content-Type': 'image/png' });
             res.end(rankImage);
-        }
-        else if (req.url === '/api/get-registration-bbcode') {
+        } else if (req.url && req.url.split('?')[0] === '/api/get-increase-image') {
+            res.writeHead(200, { 'Content-Type': 'image/png' });
+            res.end(increaseImage);
+        } else if (req.url && req.url.split('?')[0] === '/api/get-heart-image') {
+            res.writeHead(200, { 'Content-Type': 'image/png' });
+            res.end(heartImage);
+        } else if (req.url === '/api/get-registration-bbcode') {
             res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
             res.end(registrationBBCode);
-        }
-        else if (req.url === '/api/get-users') {
+        } else if (req.url === '/api/get-users') {
             res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
             res.end(JSON.stringify(users));
-        }
-        else if (req.url === '/api/get-consts') {
+        } else if (req.url === '/api/get-consts') {
             res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
             res.end(JSON.stringify({
                 minimumHeart: config.minimumHeart, minimumHeartFirstPlace: config.minimumHeartFirstPlace,
                 interval: config.interval, sleep: config.sleep
             }));
-        }
-        else if (req.url === '/favicon.ico') {
+        } else if (req.url === '/favicon.ico') {
             const filePath = path.join(__dirname, '../../client/favicon.ico');
             res.writeHead(200, { 'Content-Type': 'image/x-icon' });
             res.end(await fs.readFile(filePath));
-        }
-        else {
+        } else {
             const filePath = path.join(__dirname, '../../client', 'index.html');
             let content = await fs.readFile(filePath, 'utf8');
             content = content.replace(/%\{serverUrl}%/g, `${config.protocol}://${config.host}:${config.port}`);
@@ -160,7 +164,7 @@ async function requestListener(req: http.IncomingMessage, res: http.ServerRespon
             const data = await handlePost(req, res);
             if (data.password && md5(data.password.toString()) === config.password) {
                 stopShowingRankImage = !stopShowingRankImage;
-                rankImage = await drawRankTable();
+                rankImage = await drawRankImage();
                 res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
                 res.end('S');
             }
@@ -176,7 +180,7 @@ async function requestListener(req: http.IncomingMessage, res: http.ServerRespon
                     config.minimumHeart = parseInt(data.minimumHeart as string);
                     config.minimumHeartFirstPlace = parseInt(data.minimumHeartFirstPlace as string);
                     await writeConfig<Config>('config.json', config);
-                    rankImage = await drawRankTable();
+                    rankImage = await drawRankImage();
                     res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
                     res.end('S');
                 }
@@ -198,6 +202,7 @@ async function startup() {
         config = await loadConfig<Config>('config.json',
             { password: '', sleep: 500, interval: 600000, port: 80, host: '', protocol: 'http', minimumHeart: 30, minimumHeartFirstPlace: 100 })
         users = await loadConfig<Users>('users.json', {})
+        history = await loadConfig<History>('history.json', {})
 
         if (config.password === '') {
             await setPassword()
@@ -233,7 +238,6 @@ async function startup() {
 }
 
 setImmediate(startup)
-
 
 async function setPassword() {
     return new Promise<void>((resolve, reject) => {
@@ -294,13 +298,26 @@ function check() {
 }
 
 async function updateInfo(toUpdateUserInfo = true) {
-    rankTime = `绘制于 ${getTime()}`
-    console.log(rankTime)
+    updateTimeInfo = `绘制于 ${getTime()}`
+    console.log(updateTimeInfo)
     if (toUpdateUserInfo) {
         await updateUserInfo()
     }
-    updateRankInfo()
-    rankImage = await drawRankTable()
+    sortRank()
+    if (!lastUpdateTime) {
+        lastUpdateTime = new Date()
+    }
+    if (lastUpdateTime.getHours() === 0 && lastUpdateTime.getMinutes() === 0) {
+        const today = {}
+        for (const uid in users) {
+            today[uid] = users[uid].heartAttained
+        }
+        history[getTime(false)] = today
+    }
+    writeConfig('history.json', history)
+    rankImage = await drawRankImage()
+    increaseImage = await drawIncreaseImage()
+    heartImage = await drawHeartImage()
     registrationBBCode = getRegistrationBBCode()
     writeConfig('users.json', users)
 }
@@ -322,7 +339,7 @@ async function updateUserInfo() {
     }
 }
 
-function updateRankInfo() {
+function sortRank() {
     rank = []
     for (const uid in users) {
         const user = users[uid]
@@ -333,19 +350,26 @@ function updateRankInfo() {
     rank.sort((a: RankElement, b: RankElement) => b.heart - a.heart)
 }
 
-function getTime() {
+function getTime(toMinutes = true) {
     const date = new Date()
     const addPreZero = (num: number) => num < 10 ? `0${num}` : num.toString()
 
-    return `${
-        date.getFullYear()}年${
-        addPreZero(date.getMonth() + 1)}月${
-        addPreZero(date.getDate())}日 ${
-        addPreZero(date.getHours())}:${
-        addPreZero(date.getMinutes())}`
+    if (toMinutes) {
+        return `${
+            date.getFullYear()}年${
+            addPreZero(date.getMonth() + 1)}月${
+            addPreZero(date.getDate())}日 ${
+            addPreZero(date.getHours())}:${
+            addPreZero(date.getMinutes())}`
+    } else {
+        return `${
+            date.getFullYear()}年${
+            addPreZero(date.getMonth() + 1)}月${
+            addPreZero(date.getDate())}日`
+    }
 }
 
-async function drawRankTable() {
+async function drawRankImage() {
     if (!stopShowingRankImage) {
         const table: Table = []
         // 初步制作表格
@@ -380,7 +404,6 @@ async function drawRankTable() {
         const canvas = new Canvas(554, 260)
         const ctx = canvas.getContext('2d')
         const img = await loadImage(path.join(__dirname, '../img/table.png'))
-        ctx.fillRect(0, 0, canvas.width, canvas.height)
         ctx.drawImage(img, 0, 0)
 
         const fontHeight = 20
@@ -416,7 +439,7 @@ async function drawRankTable() {
             rowNumber++
         }
         ctx.fillStyle = '#81157d'
-        ctx.fillText(rankTime, canvas.width / 2 - ctx.measureText(rankTime).width / 2, canvas.height - 4)
+        ctx.fillText(updateTimeInfo, canvas.width / 2 - ctx.measureText(updateTimeInfo).width / 2, canvas.height - 4)
 
         return canvas.toBuffer('image/png')
     } else {
@@ -426,6 +449,70 @@ async function drawRankTable() {
         ctx.drawImage(img, 0, 0)
         return canvas.toBuffer('image/png')
     }
+}
+
+async function drawIncreaseImage() {
+    const colors = [
+        '#2db7fc',
+        '#fcda2d',
+        '#732dfc',
+        '#4ffc2d',
+        '#fc2db7',
+        '#fcda2d',
+        '#fc732d',
+        '#2d4ffc',
+        '#00787e',
+        '#7e0078'
+    ]
+    const fontHeight = 16
+    const canvas = new Canvas(400, 400)
+    const ctx = canvas.getContext('2d') as CanvasRenderingContext2D
+    const barMaxHeight = canvas.height - fontHeight * 3
+    const barWidth = canvas.width / 10
+    const barSpace = 0
+    const data = rank.map(v => {
+        if (!history[getTime(false)]) {
+            history[getTime(false)] = {}
+        }
+        if (!history[getTime(false)][v.uid]) {
+            history[getTime(false)][v.uid] = v.heart
+            writeConfig('history.json', history)
+        }
+        return { username: users[v.uid].username, delta: v.heart - history[getTime(false)][v.uid] }
+    })
+    ctx.font = `${fontHeight}px Microsoft Yahei`
+    let deltaMax = 0
+    for (const { delta } of data) {
+        deltaMax = Math.max(deltaMax, delta)
+    }
+    let i = 0
+    for (const { username, delta } of data) {
+        if (i >= 10) {
+            break
+        }
+        // Drawing bars
+        const barHeight = barMaxHeight * delta / deltaMax
+        ctx.fillStyle = colors[i]
+        drawBar(ctx, i * (barSpace + barWidth), barMaxHeight - barHeight + fontHeight * 1.5, barWidth, barHeight, colors[i])
+        ctx.fillText(delta.toString(),
+            i * (barSpace + barWidth) + barWidth / 2 - ctx.measureText(delta.toString()).width / 2,
+            fontHeight)
+        ctx.fillText(username.slice(0, 3),
+            i * (barSpace + barWidth) + barWidth / 2 - ctx.measureText(username.slice(0, 3)).width / 2,
+            canvas.height - fontHeight / 2)
+        i++
+    }
+
+    return canvas.toBuffer('image/png')
+}
+
+async function drawHeartImage() {
+    const canvas = new Canvas(554, 260)
+    const ctx = canvas.getContext('2d') as CanvasRenderingContext2D
+    ctx.font = '16px Microsoft Yahei'
+    ctx.fillStyle = '#000000'
+    ctx.fillText('制作中', 32, 32)
+    return canvas.toBuffer('image/png')
 }
 
 function getRegistrationBBCode() {

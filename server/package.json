@@ -9,8 +9,8 @@
     },
     "private": true,
     "dependencies": {
+        "@types/chart.js": "^2.7.54",
         "canvas": "^2.5.0",
-        "cookies": "^0.7.3",
         "fs-extra": "^7.0.1",
         "read": "^1.0.7",
         "request": "^2.88.0",

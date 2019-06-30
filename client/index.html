@@ -208,11 +208,11 @@
         <pre id="rank-image-bbcode">加载中…</pre>
         <hr />
         <h2>今日爱心增量条形统计图</h2>
-        <!-- <img id="increasement-image" /> -->
-        <pre id="increasement-image-bbcode">制作中…</pre>
+        <img id="increase-image" />
+        <pre id="increase-image-bbcode">制作中…</pre>
         <hr />
         <h2>近日爱心数目折线统计图</h2>
-        <!-- <img id="heart-image" /> -->
+        <img id="heart-image" />
         <pre id="heart-image-bbcode">制作中…</pre>
         <hr />
         <h2>一吨特性随意增加...</h2>
@@ -226,6 +226,8 @@
         const url = '%{serverUrl}%' // This will be replaced by server side.
         const api = {
             getRankImage: 'api/get-rank-image',
+            getIncreaseImage: 'api/get-increase-image',
+            getHeartImage: 'api/get-heart-image',
             getRegistrationBBCode: 'api/get-registration-bbcode',
             getUsers: 'api/get-users',
             login: 'api/login',
@@ -242,6 +244,10 @@
         const loggedIn = document.getElementById('logged-in')
         const rankImage = document.getElementById('rank-image')
         const rankImageBBCode = document.getElementById('rank-image-bbcode')
+        const increaseImage = document.getElementById('increase-image')
+        const increaseImageBBCode = document.getElementById('increase-image-bbcode')
+        const heartImage = document.getElementById('heart-image')
+        const heartImageBBCode = document.getElementById('heart-image-bbcode')
         const password = document.getElementById('password')
         const toSavePassword = document.getElementById('to-save-password')
         const addUserDialog = document.getElementById('add-user-dialog')
@@ -263,8 +269,10 @@
         // Other data
         let users
 
-        // Set rank images
+        // Set BBCodes
         rankImageBBCode.innerHTML = `[img=554,260]${url}/${api.getRankImage}[/img]`
+        heartImageBBCode.innerHTML = `[img=400,400]${url}/${api.getHeartImage}[/img]`
+        increaseImageBBCode.innerHTML = `[img=554,260]${url}/${api.getIncreaseImage}[/img]`
 
         // Auto login
         {
@@ -311,6 +319,8 @@
         setInterval(updateAll, 60000)
         async function updateAll() {
             rankImage.src = `${url}/${api.getRankImage}?t=${new Date().getTime()}`
+            increaseImage.src = `${url}/${api.getIncreaseImage}?t=${new Date().getTime()}`
+            heartImage.src = `${url}/${api.getHeartImage}?t=${new Date().getTime()}`
             await getUsers()
             await getConsts()
         }
