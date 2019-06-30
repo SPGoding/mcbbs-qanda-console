@@ -1,8 +1,5 @@
 {
     "extends": "tslint:recommended",
-    "rulesDirectory": [
-        "codelyzer"
-    ],
     "rules": {
         "array-type": false,
         "arrow-parens": false,
@@ -79,6 +76,9 @@
         "semicolon": [
             true,
             "never"
-        ]
+        ],
+        "forin": false,
+        "radix": false,
+        "align": false
     }
 }
