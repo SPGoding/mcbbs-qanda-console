@@ -487,9 +487,12 @@ async function drawIncreaseImage() {
         drawBar(ctx, i * barWidth, barMaxHeight - barHeight + fontHeight * 1.5, barWidth, barHeight, colors[i])
         ctx.fillText(delta.toString(),
             i * barWidth + barWidth / 2 - ctx.measureText(delta.toString()).width / 2,
-            fontHeight)
-        ctx.fillText(username.slice(0, 3),
-            i * barWidth + barWidth / 2 - ctx.measureText(username.slice(0, 3)).width / 2,
+            barMaxHeight - barHeight + fontHeight * 1.3)
+        let un = username.slice(0, 4)
+        while (ctx.measureText(un).width > barWidth) {
+            un = un.slice(0, -1)
+        }
+        ctx.fillText(un, i * barWidth + barWidth / 2 - ctx.measureText(un).width / 2,
             canvas.height - fontHeight * 2)
         i++
     }

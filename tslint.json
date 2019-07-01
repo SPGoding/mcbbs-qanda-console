@@ -79,6 +79,7 @@
         ],
         "forin": false,
         "radix": false,
-        "align": false
+        "align": false,
+        "no-string-throw": false
     }
 }

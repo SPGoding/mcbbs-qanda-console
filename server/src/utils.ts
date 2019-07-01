@@ -90,7 +90,7 @@ export function getUserViaWebCode(webCode: string, oldUser?: User): User {
             }
         }
 
-        let { banned, heartAbandoned, heartAbandonedLinks, heartInitial } = oldUser
+        const { banned, heartAbandoned, heartAbandonedLinks, heartInitial } = oldUser
 
         return {
             username,
