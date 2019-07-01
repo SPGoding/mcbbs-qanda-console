@@ -400,15 +400,15 @@ async function drawRankImage() {
             // row.push(`${reward[0]} | ${reward[1]} | ${reward[2]} | ${reward[3]}`)
         }
 
-        const canvas = new Canvas(554, 260)
+        const canvas = new Canvas(530, 260)
         const ctx = canvas.getContext('2d')
         const img = await loadImage(path.join(__dirname, '../img/table.png'))
         ctx.drawImage(img, 0, 0)
 
         const fontHeight = 20
         const rowHeight = 21
-        const columnLeftMargins = [0, 94, 94 + 310]
-        const columnWidths = [94, 310, 145]
+        const columnLeftMargins = [0, 94, 94 + 296]
+        const columnWidths = [94, 296, 138]
         ctx.font = `${fontHeight}px Microsoft Yahei`
         ctx.fillStyle = '#000000'
 
@@ -442,7 +442,7 @@ async function drawRankImage() {
 
         return canvas.toBuffer('image/png')
     } else {
-        const canvas = new Canvas(554, 260)
+        const canvas = new Canvas(530, 260)
         const ctx = canvas.getContext('2d')
         const img = await loadImage(path.join(__dirname, '../img/static-table.png'))
         ctx.drawImage(img, 0, 0)
