@@ -306,10 +306,10 @@ async function updateInfo(toUpdateUserInfo = true) {
     }
     rank.forEach(v => {
         const day = getTime(false)
-        if (!history[day]) {
+        if (history[day] === undefined) {
             history[day] = {}
         }
-        if (!history[day][v.uid]) {
+        if (history[day][v.uid] === undefined) {
             history[day][v.uid] = v.heart
         }
     })
@@ -323,7 +323,7 @@ async function updateInfo(toUpdateUserInfo = true) {
 
 async function updateUserInfo() {
     try {
-        for (const uid in users) {
+        for (const 2 in users) {
             const user = users[uid]
             if (!user.banned) {
                 const url = `http://www.mcbbs.net/?${uid}`
