@@ -78,7 +78,7 @@ async function requestListener(req: http.IncomingMessage, res: http.ServerRespon
             res.writeHead(200, { 'Content-Type': 'image/x-icon' })
             res.end(await fs.readFile(filePath))
         } else {
-            const filePath = path.join(__dirname, '../../client', 'index.min.html')
+            const filePath = path.join(__dirname, '../../client', 'index.html')
             let content = await fs.readFile(filePath, 'utf8')
             content = content.replace(/%\{serverUrl}%/g, `${config.protocol}://${config.host}:${config.port}`)
             res.writeHead(200, { 'Content-Type': `text/html; charset=utf-8` })

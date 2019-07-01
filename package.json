@@ -7,8 +7,7 @@
         "watch": "cd server && npm run watch",
         "postinstall": "npm run install:server",
         "install:server": "cd server && npm i && cd ..",
-        "test": "echo 'Error: no test specified'",
-        "minifyHtml": "html-minifier -c .html-minifier.json -o client/index.min.html client/index.html"
+        "test": "echo 'Error: no test specified'"
     },
     "private": true,
     "dependencies": {
@@ -16,7 +15,6 @@
     },
     "devDependencies": {
         "@types/md5": "^2.1.33",
-        "html-minifier": "^4.0.0",
         "ts-node": "~7.0.0",
         "tslint": "~5.11.0",
         "typescript": "~3.2.2"
