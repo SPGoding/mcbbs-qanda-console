@@ -323,7 +323,7 @@ async function updateInfo(toUpdateUserInfo = true) {
 
 async function updateUserInfo() {
     try {
-        for (const 2 in users) {
+        for (const uid in users) {
             const user = users[uid]
             if (!user.banned) {
                 const url = `http://www.mcbbs.net/?${uid}`
