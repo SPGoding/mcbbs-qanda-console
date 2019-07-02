@@ -531,7 +531,7 @@ async function drawHeartImage() {
     let i = 0
     let { r, g, b } = { r: 0, g: 0, b: 0 }
     for (const { username, hearts } of data) {
-        b += 63
+        b += 85
         if (b > 255) {
             g += 63
             b = 0
