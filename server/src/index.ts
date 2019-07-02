@@ -531,13 +531,17 @@ async function drawHeartImage() {
     let i = 0
     let { r, g, b } = { r: 0, g: 0, b: 0 }
     for (const { username, hearts } of data) {
-        b += 85
+        let delta = 85
+        if (data.length > 27) {
+            delta = 64
+        }
+        b += delta
         if (b > 255) {
-            g += 63
+            g += delta
             b = 0
         }
         if (g > 255) {
-            r += 63
+            r += delta
             g = 0
         }
         const addPreZero = (num: number) => num.toString(16).length < 2 ? `0${num.toString(16)}` : num.toString(16)
