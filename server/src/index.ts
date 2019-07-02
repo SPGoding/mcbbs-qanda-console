@@ -452,16 +452,16 @@ async function drawRankImage() {
 
 async function drawIncreaseImage() {
     const colors = [
-        '#2db7fc',
-        '#fcda2d',
-        '#732dfc',
-        '#4ffc2d',
-        '#fc2db7',
-        '#fcda2d',
-        '#fc732d',
-        '#2d4ffc',
-        '#00787e',
-        '#7e0078'
+        '#48b2bf',
+        '#48bf91',
+        '#bf4847',
+        '#5448bf',
+        '#b3bf48',
+        '#9048bf',
+        '#bf5448',
+        '#77bf48',
+        '#4877bf',
+        '#bf9048'
     ]
     const fontHeight = 16
     const canvas = new Canvas(400, 432)
@@ -492,6 +492,7 @@ async function drawIncreaseImage() {
         while (ctx.measureText(un).width > barWidth) {
             un = un.slice(0, -1)
         }
+        ctx.fillStyle = '#000000'
         ctx.fillText(un, i * barWidth + barWidth / 2 - ctx.measureText(un).width / 2,
             canvas.height - fontHeight * 2)
         i++
@@ -506,7 +507,7 @@ async function drawIncreaseImage() {
 
 async function drawHeartImage() {
     const fontHeight = 16
-    const canvas = new Canvas(500, 400)
+    const canvas = new Canvas(500, 600)
     const usernameRegionWidth = 100
     const ctx = canvas.getContext('2d') as CanvasRenderingContext2D
     const pointMaxY = canvas.height - fontHeight * 3
