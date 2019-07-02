@@ -453,9 +453,9 @@ async function drawRankImage() {
 async function drawIncreaseImage() {
     const colors = [
         '#48b2bf',
-        '#48bf91',
         '#bf4847',
         '#5448bf',
+        '#48bf91',
         '#b3bf48',
         '#9048bf',
         '#bf5448',
@@ -529,24 +529,10 @@ async function drawHeartImage() {
         }
     }
     let i = 0
-    let { r, g, b } = { r: 0, g: 0, b: 0 }
+    let color = 0
+    const delta = Math.round(0xffffff / data.length)
     for (const { username, hearts } of data) {
-        let delta = 85
-        if (data.length > 27) {
-            delta = 64
-        }
-        b += delta
-        if (b > 255) {
-            g += delta
-            b = 0
-        }
-        if (g > 255) {
-            r += delta
-            g = 0
-        }
-        const addPreZero = (num: number) => num.toString(16).length < 2 ? `0${num.toString(16)}` : num.toString(16)
-        ctx.strokeStyle = ctx.fillStyle =
-            `#${addPreZero(r)}${addPreZero(g)}${addPreZero(b)}`
+        ctx.strokeStyle = ctx.fillStyle = `#${color.toString(16)}`
         const points: number[][] = []
         let j = 0
         for (const heart of hearts) {
@@ -570,6 +556,7 @@ async function drawHeartImage() {
             canvas.width - usernameRegionWidth / 2 - ctx.measureText(username).width / 2,
             (i + 1.5) * fontHeight)
         i++
+        color += delta
     }
     ctx.fillStyle = '#81157d'
     ctx.fillText(getTime(false),
