@@ -279,6 +279,8 @@ function getHtmlFromCode(code: 200 | 400 | 404) {
 
 function check() {
     if (new Date().getHours() === 0 && new Date().getMinutes() === 0) {
+        const filePath = path.join(__dirname,`counter/${(new Date().getDate() - 1).toString()}.json`)
+        fs.writeJson(filePath, counter, { spaces: 4 })
         counter.view = 0
         counter.ips = []
     }
