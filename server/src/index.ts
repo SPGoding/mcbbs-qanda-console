@@ -40,8 +40,8 @@ async function requestListener(req: http.IncomingMessage, res: http.ServerRespon
                 counter[day] = { view: 0, ips: [] }
             }
             counter[day].view += 1
-            const ip = req.connection.address().toString()
-            if (counter[day].ips.indexOf(ip) === -1) {
+            const ip = req.connection.remoteAddress
+            if (ip && counter[day].ips.indexOf(ip) === -1) {
                 counter[day].ips.push(ip)
             }
             await writeConfig('counter.json', counter)
