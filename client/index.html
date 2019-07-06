@@ -205,6 +205,7 @@
     </div>
     <div class="card" id="preview">
         <h1>预览</h1>
+        <pre id="counter">加载中…</pre>
         <h2>爱心数目统计表</h2>
         <img id="rank-image" />
         <pre id="rank-image-bbcode">加载中…</pre>
@@ -239,7 +240,8 @@
             delUser: 'api/del-user',
             toggleShowingRankImage: 'api/toggle-showing-rank-image',
             editConsts: 'api/edit-consts',
-            getConsts: 'api/get-consts'
+            getConsts: 'api/get-consts',
+            updateCounter: 'api/update-counter'
         }
 
         // Get elements
@@ -253,6 +255,7 @@
         const heartImageBBCode = document.getElementById('heart-image-bbcode')
         const password = document.getElementById('password')
         const toSavePassword = document.getElementById('to-save-password')
+        const counter = document.getElementById('counter')
         const addUserDialog = document.getElementById('add-user-dialog')
         const addUserDialogUid = document.getElementById('add-user-dialog-uid')
         const addUserDialogHeartInitial = document.getElementById('add-user-dialog-heart-initial')
@@ -324,8 +327,14 @@
             rankImage.src = `${url}/${api.getRankImage}?t=${new Date().getTime()}`
             increaseImage.src = `${url}/${api.getIncreaseImage}?t=${new Date().getTime()}`
             heartImage.src = `${url}/${api.getHeartImage}?t=${new Date().getTime()}`
+            await updateCounter()
             await getUsers()
             await getConsts()
+        }
+
+        async function updateCounter() {
+            const result = JSON.parse(await request('GET', api.updateCounter))
+            counter.innerHTML = `查看次数：${result.view} 次，独立 IP：${result.ip} 个`
         }
 
         async function getUsers() {

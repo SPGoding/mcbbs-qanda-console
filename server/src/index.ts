@@ -28,31 +28,21 @@ let heartImage: Buffer
 
 let lastUpdateTime: Date
 
-// /**
-//  * 奖励
-//  */
-// const rewards = [
-//     [10, 10, 3, 2],
-//     [7, 7, 2, 1],
-//     [5, 5, 1, 0],
-//     [3, 3, 1, 0],
-//     [3, 3, 1, 0],
-//     [3, 3, 1, 0],
-//     [3, 3, 1, 0],
-//     [3, 3, 1, 0],
-//     [3, 3, 1, 0],
-//     [3, 3, 1, 0]
-// ]
-// /**
-//  * 每增加一贡献所需爱心
-//  */
-// const ctbHeart = 50
+const counter: { view: number, ips: string[] } = {
+    view: 0,
+    ips: []
+}
 
 let stopShowingRankImage = false
 
 async function requestListener(req: http.IncomingMessage, res: http.ServerResponse) {
     if (req.method === 'GET') {
         if (req.url && req.url.split('?')[0] === '/api/get-rank-image') {
+            counter.view += 1
+            const ip = req.connection.address().toString()
+            if (counter.ips.indexOf(ip) === -1) {
+                counter.ips.push(ip)
+            }
             res.writeHead(200, { 'Content-Type': 'image/png' })
             res.end(rankImage)
         } else if (req.url && req.url.split('?')[0] === '/api/get-increase-image') {
@@ -72,6 +62,12 @@ async function requestListener(req: http.IncomingMessage, res: http.ServerRespon
             res.end(JSON.stringify({
                 minimumHeart: config.minimumHeart, minimumHeartFirstPlace: config.minimumHeartFirstPlace,
                 interval: config.interval, sleep: config.sleep
+            }))
+        } else if (req.url === '/api/update-counter') {
+            res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' })
+            res.end(JSON.stringify({
+                view: counter.view,
+                ip: counter.ips.length
             }))
         } else if (req.url === '/favicon.ico') {
             const filePath = path.join(__dirname, '../../client/favicon.ico')
@@ -282,6 +278,11 @@ function getHtmlFromCode(code: 200 | 400 | 404) {
 }
 
 function check() {
+    if (new Date().getHours() === 0 && new Date().getMinutes() === 0) {
+        counter.view = 0
+        counter.ips = []
+    }
+
     if (!lastUpdateTime) {
         lastUpdateTime = new Date()
         updateInfo()
