@@ -39,6 +39,13 @@ export interface History {
     }
 }
 
+export interface Counter {
+    [time: string]: {
+        view: number,
+        ips: string[]
+    }
+}
+
 export type Table = Row[]
 export type Row = (string | number)[]
 
