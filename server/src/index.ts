@@ -9,7 +9,7 @@ import * as read from 'read'
 import { Canvas, loadImage } from 'canvas'
 import {
     History, Users, loadConfig, Config, RankElement, getUserViaWebCode, writeConfig,
-    getBBCodeOfTable, Table, Row, sleep, drawBar
+    getBBCodeOfTable, Table, Row, sleep, drawBar, Counter
 } from './utils'
 import Logger from 'Logger';
 
@@ -22,6 +22,7 @@ let config: Config = {
 let users: Users = {}
 let history: History = {}
 let rank: RankElement[]
+let counter: Counter = {}
 
 let rankImage: Buffer
 let updateTimeInfo = ''
@@ -31,31 +32,22 @@ let heartImage: Buffer
 
 let lastUpdateTime: Date
 
-// /**
-//  * 奖励
-//  */
-// const rewards = [
-//     [10, 10, 3, 2],
-//     [7, 7, 2, 1],
-//     [5, 5, 1, 0],
-//     [3, 3, 1, 0],
-//     [3, 3, 1, 0],
-//     [3, 3, 1, 0],
-//     [3, 3, 1, 0],
-//     [3, 3, 1, 0],
-//     [3, 3, 1, 0],
-//     [3, 3, 1, 0]
-// ]
-// /**
-//  * 每增加一贡献所需爱心
-//  */
-// const ctbHeart = 50
 
 let stopShowingRankImage = false
 
 async function requestListener(req: http.IncomingMessage, res: http.ServerResponse) {
     if (req.method === 'GET') {
         if (req.url && req.url.split('?')[0] === '/api/get-rank-image') {
+            const day = getTime(false)
+            if (!counter[day]) {
+                counter[day] = { view: 0, ips: [] }
+            }
+            counter[day].view += 1
+            const ip = req.connection.remoteAddress
+            if (ip && counter[day].ips.indexOf(ip) === -1) {
+                counter[day].ips.push(ip)
+            }
+            await writeConfig('counter.json', counter)
             res.writeHead(200, { 'Content-Type': 'image/png' })
             res.end(rankImage)
         } else if (req.url && req.url.split('?')[0] === '/api/get-increase-image') {
@@ -75,6 +67,13 @@ async function requestListener(req: http.IncomingMessage, res: http.ServerRespon
             res.end(JSON.stringify({
                 minimumHeart: config.minimumHeart, minimumHeartFirstPlace: config.minimumHeartFirstPlace,
                 interval: config.interval, sleep: config.sleep
+            }))
+        } else if (req.url === '/api/update-counter') {
+            const day = getTime(false)
+            res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' })
+            res.end(JSON.stringify({
+                view: counter[day].view,
+                ip: counter[day].ips.length
             }))
         } else if (req.url === '/favicon.ico') {
             const filePath = path.join(__dirname, '../../client/favicon.ico')
@@ -203,6 +202,7 @@ async function startup() {
             })
         users = await loadConfig<Users>('users.json', {})
         history = await loadConfig<History>('history.json', {})
+        counter = await loadConfig<Counter>('counter.json', {})
 
         if (config.password === '') {
             await setPassword()
