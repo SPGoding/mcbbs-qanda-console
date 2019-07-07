@@ -11,6 +11,9 @@ import {
     History, Users, loadConfig, Config, RankElement, getUserViaWebCode, writeConfig,
     getBBCodeOfTable, Table, Row, sleep, drawBar
 } from './utils'
+import Logger from 'Logger';
+
+const logger = new Logger()
 
 let config: Config = {
     password: '', interval: NaN, port: NaN, host: '', protocol: 'http',
