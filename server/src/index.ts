@@ -301,7 +301,7 @@ function check() {
 async function updateInfo(toUpdateUserInfo = true) {
     updateTimeInfo = `更新于 ${getTime()}`
     if (toUpdateUserInfo) {
-        logger.info(updateTimeInfo)
+        logger.dbug(updateTimeInfo)
         await updateUserInfo()
     }
     sortRank()
