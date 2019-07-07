@@ -9,9 +9,8 @@ import * as read from 'read'
 import { Canvas, loadImage } from 'canvas'
 import {
     History, Users, loadConfig, Config, RankElement, getUserViaWebCode, writeConfig,
-    getBBCodeOfTable, Table, Row, sleep, drawBar, Counter
+    getBBCodeOfTable, Table, Row, sleep, drawBar, Counter, Logger
 } from './utils'
-import Logger from 'Logger';
 
 const logger = new Logger()
 
@@ -28,14 +27,13 @@ let rankImage: Buffer
 let updateTimeInfo = ''
 let registrationBBCode = ''
 let increaseImage: Buffer
-let heartImage: Buffer
 
 let lastUpdateTime: Date
-
 
 let stopShowingRankImage = false
 
 async function requestListener(req: http.IncomingMessage, res: http.ServerResponse) {
+    const ip = req.connection.remoteAddress
     if (req.method === 'GET') {
         if (req.url && req.url.split('?')[0] === '/api/get-rank-image') {
             const day = getTime(false)
@@ -43,9 +41,9 @@ async function requestListener(req: http.IncomingMessage, res: http.ServerRespon
                 counter[day] = { view: 0, ips: [] }
             }
             counter[day].view += 1
-            const ip = req.connection.remoteAddress
             if (ip && counter[day].ips.indexOf(ip) === -1) {
                 counter[day].ips.push(ip)
+                logger.dbug(`New unique ip ${ip}.`)
             }
             await writeConfig('counter.json', counter)
             res.writeHead(200, { 'Content-Type': 'image/png' })
@@ -53,9 +51,6 @@ async function requestListener(req: http.IncomingMessage, res: http.ServerRespon
         } else if (req.url && req.url.split('?')[0] === '/api/get-increase-image') {
             res.writeHead(200, { 'Content-Type': 'image/png' })
             res.end(increaseImage)
-        } else if (req.url && req.url.split('?')[0] === '/api/get-heart-image') {
-            res.writeHead(200, { 'Content-Type': 'image/png' })
-            res.end(heartImage)
         } else if (req.url === '/api/get-registration-bbcode') {
             res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' })
             res.end(registrationBBCode)
@@ -97,6 +92,7 @@ async function requestListener(req: http.IncomingMessage, res: http.ServerRespon
         if (req.url === '/api/add-user') {
             const data = await handlePost(req, res)
             if (!data.password || md5(data.password.toString()) !== config.password) {
+                logger.warn(`Wrong password from ${ip}.`)
                 res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' })
                 res.end(getHtmlFromCode(400))
                 return
@@ -122,6 +118,7 @@ async function requestListener(req: http.IncomingMessage, res: http.ServerRespon
         } else if (req.url === '/api/del-user') {
             const data = await handlePost(req, res)
             if (!data.password || md5(data.password.toString()) !== config.password) {
+                logger.warn(`Wrong password from ${ip}.`)
                 res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' })
                 res.end(getHtmlFromCode(400))
                 return
@@ -137,6 +134,7 @@ async function requestListener(req: http.IncomingMessage, res: http.ServerRespon
         } else if (req.url === '/api/edit-user') {
             const data = await handlePost(req, res)
             if (!data.password || md5(data.password.toString()) !== config.password) {
+                logger.warn(`Wrong password from ${ip}.`)
                 res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' })
                 res.end(getHtmlFromCode(400))
                 return
@@ -157,6 +155,7 @@ async function requestListener(req: http.IncomingMessage, res: http.ServerRespon
                 res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' })
                 res.end('S')
             } else {
+                logger.warn(`Wrong password from ${ip}.`)
                 res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' })
                 res.end('E')
             }
@@ -168,6 +167,7 @@ async function requestListener(req: http.IncomingMessage, res: http.ServerRespon
                 res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' })
                 res.end('S')
             } else {
+                logger.warn(`Wrong password from ${ip}.`)
                 res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' })
                 res.end(getHtmlFromCode(400))
             }
@@ -186,6 +186,7 @@ async function requestListener(req: http.IncomingMessage, res: http.ServerRespon
                     res.end('Expected constants')
                 }
             } else {
+                logger.warn(`Wrong password from ${ip}.`)
                 res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' })
                 res.end(getHtmlFromCode(400))
             }
@@ -218,22 +219,22 @@ async function startup() {
                 }, requestListener)
                 .listen(config.port)
                 .on('error', e => {
-                    console.error(e.message)
+                    logger.eror(e.message)
                 })
         } else {
             http
                 .createServer(requestListener)
                 .listen(config.port)
                 .on('error', e => {
-                    console.error(e.message)
+                    logger.eror(e.message)
                 })
         }
 
         await updateInfo()
 
-        console.log(`Server is running at ${config.protocol}://${config.host}:${config.port}.`)
+        logger.dbug(`Server is running at ${config.protocol}://${config.host}:${config.port}.`)
     } catch (e) {
-        console.error(e)
+        logger.eror(e)
     }
 }
 
@@ -248,7 +249,7 @@ async function setPassword() {
                     await writeConfig<Config>('config.json', config)
                     resolve()
                 } else {
-                    console.error('Inconsistent input.')
+                    logger.eror('Inconsistent input.')
                     reject()
                     process.exit()
                 }
@@ -299,8 +300,8 @@ function check() {
 
 async function updateInfo(toUpdateUserInfo = true) {
     updateTimeInfo = `更新于 ${getTime()}`
-    console.log(updateTimeInfo)
     if (toUpdateUserInfo) {
+        logger.info(updateTimeInfo)
         await updateUserInfo()
     }
     sortRank()
@@ -319,7 +320,6 @@ async function updateInfo(toUpdateUserInfo = true) {
     writeConfig('history.json', history)
     rankImage = await drawRankImage()
     increaseImage = await drawIncreaseImage()
-    heartImage = await drawHeartImage()
     registrationBBCode = getRegistrationBBCode()
     writeConfig('users.json', users)
 }
@@ -337,7 +337,7 @@ async function updateUserInfo() {
             }
         }
     } catch (e) {
-        console.error(`Updating info error: '${e}'.`)
+        logger.eror(`Updating info error: '${e}'.`)
     }
 }
 
@@ -389,18 +389,6 @@ async function drawRankImage() {
                     row[0] = lastRow[0]
                 }
             }
-            // // 显示奖励
-            // let reward = [0, 0, 0, 0]
-            // // 各名次基础奖励
-            // if (row[2] >= heartMin[i]) {
-            //     reward = rewards[i]
-            // }
-            // // 拓展贡献奖励
-            // if (row[2] >= 100) {
-            //     const ctb = Number(row[2]) % ctbHeart - 1
-            //     reward[3] += ctb
-            // }
-            // row.push(`${reward[0]} | ${reward[1]} | ${reward[2]} | ${reward[3]}`)
         }
 
         const canvas = new Canvas(530, 260)
@@ -508,67 +496,6 @@ async function drawIncreaseImage() {
     return canvas.toBuffer('image/png')
 }
 
-async function drawHeartImage() {
-    const fontHeight = 16
-    const canvas = new Canvas(500, 600)
-    const usernameRegionWidth = 100
-    const ctx = canvas.getContext('2d') as CanvasRenderingContext2D
-    const pointMaxY = canvas.height - fontHeight * 3
-    const pointSpace = (canvas.width - usernameRegionWidth) / 11
-    const data = rank.map(v => {
-        const ans: number[] = []
-        for (const day in history) {
-            if (history[day] && history[day][v.uid]) {
-                ans.push(history[day][v.uid])
-            }
-        }
-        return { username: users[v.uid].username, hearts: ans.slice(-7) }
-    })
-    ctx.font = `${fontHeight}px Microsoft Yahei`
-    let heartMax = 0
-    for (const { hearts } of data) {
-        for (const heart of hearts) {
-            heartMax = Math.max(heartMax, heart)
-        }
-    }
-    let i = 0
-    let color = 0
-    const delta = Math.round(0xffffff / data.length)
-    for (const { username, hearts } of data) {
-        ctx.strokeStyle = ctx.fillStyle = `#${color.toString(16)}`
-        const points: number[][] = []
-        let j = 0
-        for (const heart of hearts) {
-            const pointX = (j + 0.5) * pointSpace
-            const pointY = pointMaxY - pointMaxY * heart / heartMax + fontHeight * 1.5
-            const point = [pointX, pointY]
-            points.push(point)
-            ctx.fillText(heart.toString(),
-                pointX - ctx.measureText(heart.toString()).width / 2, pointY + fontHeight)
-            j++
-        }
-        ctx.beginPath()
-        if (points[0]) {
-            ctx.moveTo(points[0][0], points[0][1])
-            for (const point of points) {
-                ctx.lineTo(point[0], point[1])
-            }
-        }
-        ctx.stroke()
-        ctx.fillText(username,
-            canvas.width - usernameRegionWidth / 2 - ctx.measureText(username).width / 2,
-            (i + 1.5) * fontHeight)
-        i++
-        color += delta
-    }
-    ctx.fillStyle = '#81157d'
-    ctx.fillText(getTime(false),
-        (canvas.width - ctx.measureText(getTime(false)).width) / 2,
-        canvas.height - fontHeight * 0.5)
-
-    return canvas.toBuffer('image/png')
-}
-
 function getRegistrationBBCode() {
     const table: Table = []
     let row: Row = [
@@ -602,6 +529,8 @@ async function addUser(uid: number, heartInitial?: number) {
             user.heartAttained = user.heartPresent - user.heartInitial - user.heartAbandoned
         }
 
+        logger.info(`+ ${uid}: ${JSON.stringify(user)}.`)
+
         users[uid] = user
         updateInfo(false)
     } catch (_) {
@@ -611,6 +540,7 @@ async function addUser(uid: number, heartInitial?: number) {
 }
 
 function delUser(uid: number) {
+    logger.info(`- ${uid}: ${JSON.stringify(users[uid])}.`)
     delete users[uid]
     updateInfo(false)
 }
@@ -618,9 +548,11 @@ function delUser(uid: number) {
 function editUser(uid: number, heartInitial: number,
     heartAbandoned: number, banned: boolean) {
     const user = users[uid]
+    logger.info(`- ${uid}: ${JSON.stringify(user)}`)
     user.heartInitial = heartInitial
     user.heartAbandoned = heartAbandoned
     user.banned = banned
     user.heartAttained = user.heartPresent - user.heartInitial - user.heartAbandoned
+    logger.info(`+ ${uid}: ${JSON.stringify(user)}`)
     updateInfo(false)
 }
