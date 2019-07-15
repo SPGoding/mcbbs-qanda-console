@@ -476,9 +476,11 @@ async function drawIncreaseImage() {
         const barHeight = barMaxHeight * delta / deltaMax
         ctx.fillStyle = colors[i]
         drawBar(ctx, i * barWidth, barMaxHeight - barHeight + fontHeight * 1.5, barWidth, barHeight, colors[i])
+        const yMax = barMaxHeight + fontHeight * 1.3
+        const y = barMaxHeight - barHeight + fontHeight * 1.3
         ctx.fillText(delta.toString(),
             i * barWidth + barWidth / 2 - ctx.measureText(delta.toString()).width / 2,
-            barMaxHeight - barHeight + fontHeight * 1.3)
+            y > yMax ? yMax : y)
         let un = username.slice(0, 4)
         while (ctx.measureText(un).width > barWidth) {
             un = un.slice(0, -1)
