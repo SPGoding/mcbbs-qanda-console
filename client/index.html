@@ -336,14 +336,16 @@
 
         // Update
         updateAll()
-        setInterval(updateAll, 60000)
-        async function updateAll() {
+        setInterval(updateAll, 60000, false)
+        async function updateAll(updateAll = true) {
             rankImage.src = `${url}/${api.getRankImage}?t=${new Date().getTime()}`
             increaseImage.src = `${url}/${api.getIncreaseImage}?t=${new Date().getTime()}`
             await updateCounter()
             await getUsers()
-            await getConsts()
-            await getHistory()
+            if (updateAll) {
+                await getConsts()
+                await getHistory()
+            }
         }
 
         async function updateCounter() {
