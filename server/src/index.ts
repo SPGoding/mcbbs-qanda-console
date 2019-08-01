@@ -57,6 +57,9 @@ async function requestListener(req: http.IncomingMessage, res: http.ServerRespon
         } else if (req.url === '/api/get-users') {
             res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' })
             res.end(JSON.stringify(users))
+        } else if (req.url === '/api/get-history') {
+            res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' })
+            res.end(JSON.stringify(history))
         } else if (req.url === '/api/get-consts') {
             res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' })
             res.end(JSON.stringify({
@@ -84,7 +87,7 @@ async function requestListener(req: http.IncomingMessage, res: http.ServerRespon
     } else if (req.method === 'POST') {
         if (req.url !== '/api/add-user' && req.url !== '/api/del-user' && req.url !== '/api/edit-user'
             && req.url !== '/api/login' && req.url !== '/api/toggle-showing-rank-image'
-            && req.url !== '/api/edit-consts') {
+            && req.url !== '/api/edit-consts' && req.url !== '/api/edit-history') {
             res.writeHead(404, 'Resource Not Found', { 'Content-Type': 'text/html' })
             res.end(getHtmlFromCode(404))
             return
@@ -175,10 +178,41 @@ async function requestListener(req: http.IncomingMessage, res: http.ServerRespon
             const data = await handlePost(req, res)
             if (data.password && md5(data.password.toString()) === config.password) {
                 if (data.minimumHeart && data.minimumHeartFirstPlace) {
-                    config.minimumHeart = parseInt(data.minimumHeart as string)
-                    config.minimumHeartFirstPlace = parseInt(data.minimumHeartFirstPlace as string)
+                    const commingMinimumHeart = parseInt(data.minimumHeart as string)
+                    const commingMinimumHeartFirstPlace = parseInt(data.minimumHeartFirstPlace as string)
+                    logger
+                        .info('Consts')
+                        .indent()
+                        .info(`- ${config.minimumHeartFirstPlace}, ${config.minimumHeart}`)
+                        .info(`+ ${commingMinimumHeartFirstPlace}, ${commingMinimumHeart}`)
+                        .indent(-1)
+                    config.minimumHeart = commingMinimumHeart
+                    config.minimumHeartFirstPlace = commingMinimumHeartFirstPlace
                     await writeConfig<Config>('config.json', config)
                     rankImage = await drawRankImage()
+                    res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' })
+                    res.end('S')
+                } else {
+                    res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' })
+                    res.end('Expected constants')
+                }
+            } else {
+                logger.warn(`Wrong password from ${ip}.`)
+                res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' })
+                res.end(getHtmlFromCode(400))
+            }
+        } else if (req.url === '/api/edit-history') {
+            const data = await handlePost(req, res)
+            if (data.password && md5(data.password.toString()) === config.password) {
+                if (data.value) {
+                    const commingValue = data.value as string
+                    logger
+                        .info('History')
+                        .indent()
+                        .info(`- ${JSON.stringify(history)}`, `+ ${commingValue}`)
+                        .indent(-1)
+                    history = JSON.parse(commingValue)
+                    await writeConfig<History>('history.json', history)
                     res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' })
                     res.end('S')
                 } else {
@@ -530,8 +564,11 @@ async function addUser(uid: number, heartInitial?: number) {
             user.heartInitial = heartInitial
             user.heartAttained = user.heartPresent - user.heartInitial - user.heartAbandoned
         }
-
-        logger.info(`+ ${uid}: ${JSON.stringify(user)}.`)
+        logger
+            .info('Users')
+            .indent()
+            .info(`+ ${uid}: ${JSON.stringify(user)}.`)
+            .indent(-1)
 
         users[uid] = user
         updateInfo(false)
@@ -542,7 +579,11 @@ async function addUser(uid: number, heartInitial?: number) {
 }
 
 function delUser(uid: number) {
-    logger.info(`- ${uid}: ${JSON.stringify(users[uid])}.`)
+    logger
+        .info('Users')
+        .indent()
+        .info(`- ${uid}: ${JSON.stringify(users[uid])}.`)
+        .indent(-1)
     delete users[uid]
     updateInfo(false)
 }
@@ -550,11 +591,16 @@ function delUser(uid: number) {
 function editUser(uid: number, heartInitial: number,
     heartAbandoned: number, banned: boolean) {
     const user = users[uid]
-    logger.info(`- ${uid}: ${JSON.stringify(user)}`)
+    logger
+        .info('Users')
+        .indent()
+        .info(`- ${uid}: ${JSON.stringify(user)}`)
     user.heartInitial = heartInitial
     user.heartAbandoned = heartAbandoned
     user.banned = banned
     user.heartAttained = user.heartPresent - user.heartInitial - user.heartAbandoned
-    logger.info(`+ ${uid}: ${JSON.stringify(user)}`)
+    logger
+        .info(`+ ${uid}: ${JSON.stringify(user)}`)
+        .indent(-1)
     updateInfo(false)
 }

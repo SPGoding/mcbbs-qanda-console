@@ -130,6 +130,15 @@
             color: white;
         }
 
+        #edit-history-dialog {
+            width: 50%;
+        }
+
+        #edit-history-dialog-text {
+            width: 100%;
+            height: 16em;
+        }
+
         dialog {
             position: fixed;
         }
@@ -175,6 +184,12 @@
         <button type="button" onclick="confirmEditConst()" class="primary">确定</button>
         <button type="button" onclick="editConstDialog.open = false">取消</button>
     </dialog>
+    <dialog id="edit-history-dialog">
+        <h1>编辑历史</h1>
+        <textarea id="edit-history-dialog-text"></textarea><br />
+        <button type="button" onclick="confirmEditHistory()" class="primary">确定</button>
+        <button type="button" onclick="editHistoryDialog.open = false">取消</button>
+    </dialog>
     <div class="card" id="manage">
         <h1>管理</h1>
         <div id="logged-out">
@@ -186,7 +201,8 @@
         <div id="logged-in" style="display: none;">
             <p>欢迎您，问答大区版主，<a href="#" onclick="logout()">点此登出</a>。</p>
             <button type="button" onclick="editConst()" class="primary">编辑常数</button>
-            <button type="button" onclick="toggleShowingRankImage()" class="warning">切换公示</button><br />
+            <button type="button" onclick="editHistory()" class="primary">编辑历史</button>
+            <button type="button" onclick="toggleShowingRankImage()" class="warning">切换统计表状态</button><br />
             <button type="button" onclick="addUser()" class="primary">添加用户</button>
             <table id="users">
                 <tr>
@@ -238,7 +254,9 @@
             toggleShowingRankImage: 'api/toggle-showing-rank-image',
             editConsts: 'api/edit-consts',
             getConsts: 'api/get-consts',
-            updateCounter: 'api/update-counter'
+            updateCounter: 'api/update-counter',
+            getHistory: 'api/get-history',
+            editHistory: 'api/edit-history'
         }
 
         // Get elements
@@ -266,6 +284,8 @@
         const editConstDialogMinimumHeartFirstPlace = document.getElementById('edit-const-dialog-minimum-heart-first-place')
         const editConstDialogInterval = document.getElementById('edit-const-dialog-interval')
         const editConstDialogSleep = document.getElementById('edit-const-dialog-sleep')
+        const editHistoryDialog = document.getElementById('edit-history-dialog')
+        const editHistoryDialogText = document.getElementById('edit-history-dialog-text')
 
         // Other data
         let users
@@ -323,6 +343,7 @@
             await updateCounter()
             await getUsers()
             await getConsts()
+            await getHistory()
         }
 
         async function updateCounter() {
@@ -377,6 +398,11 @@
             editConstDialogInterval.value = result.interval
             editConstDialogMinimumHeart.value = result.minimumHeart
             editConstDialogMinimumHeartFirstPlace.value = result.minimumHeartFirstPlace
+        }
+
+        async function getHistory() {
+            const result = JSON.parse(await request('GET', api.getHistory))
+            editHistoryDialogText.value = JSON.stringify(result, undefined, 4)
         }
 
         async function toggleShowingRankImage() {
@@ -440,6 +466,20 @@
                 editConstDialog.open = false
             } else {
                 alert(`编辑常数时出现错误: ${response}`)
+            }
+        }
+
+        function editHistory() {
+            editHistoryDialog.open = true
+        }
+
+        async function confirmEditHistory() {
+            const response = await request('POST', api.editHistory, `password=${password.value}&value=${JSON.stringify(JSON.parse(editHistoryDialogText.value))}`)
+            await updateAll()
+            if (response === 'S') {
+                editHistoryDialog.open = false
+            } else {
+                alert(`编辑历史时出现错误: ${response}`)
             }
         }
 

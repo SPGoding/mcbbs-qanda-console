@@ -164,7 +164,9 @@ export class Logger {
                 fs.mkdirSync(path.dirname(logPath))
             }
             console.log(m)
-            fs.appendFileSync(logPath, `${m}\n`, { encoding: 'utf8' })
+            if (type !== 'DBUG') {
+                fs.appendFileSync(logPath, `${m}\n`, { encoding: 'utf8' })
+            }
         })
         return this
     }
