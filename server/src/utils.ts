@@ -150,7 +150,7 @@ export function drawBar(ctx: CanvasRenderingContext2D, upperLeftCornerX: number,
 export class Logger {
     private _indent = 0
 
-    private _log(type: 'INFO' | 'WARN' | 'EROR' | 'DBUG', ...msg: string[]) {
+    private _log(type: 'INFO' | 'WARN' | 'EROR' | 'DBUG', thread: string, ...msg: string[]) {
         const date = new Date()
         const fixTwoDigits = (number: number) => number < 10 ? `0${number}` : number.toString()
         const fixThreeDigits = (number: number) => number < 10 ? `00${number}` : number < 100 ? `0${number}` : number.toString()
@@ -159,7 +159,7 @@ export class Logger {
             fixTwoDigits(date.getSeconds())}:${fixThreeDigits(date.getMilliseconds())}`
         const fileName = `${date.getFullYear()}-${fixTwoDigits(date.getMonth() + 1)}`
         msg.forEach(v => {
-            const m = `[${time}] [MAIN] [${type}] ${'  '.repeat(this._indent)}${v}`
+            const m = `[${time}] [${thread.toUpperCase()}] [${type}] ${'  '.repeat(this._indent)}${v}`
             const logPath = path.join(__dirname, `logs/${fileName}.log`)
             if (!fs.pathExistsSync(path.dirname(logPath))) {
                 fs.mkdirSync(path.dirname(logPath))
@@ -181,8 +181,8 @@ export class Logger {
      * Log an information.
      * @param msg The message.
      */
-    public info(...msg: string[]) {
-        return this._log('INFO', ...msg)
+    public info(thread: string, ...msg: string[]) {
+        return this._log('INFO', thread, ...msg)
     }
 
     /**
@@ -190,7 +190,7 @@ export class Logger {
      * @param msg The message.
      */
     public warn(...msg: string[]) {
-        return this._log('WARN', ...msg)
+        return this._log('WARN', 'MAIN', ...msg)
     }
 
     /**
@@ -198,7 +198,7 @@ export class Logger {
      * @param msg The message.
      */
     public eror(...msg: string[]) {
-        return this._log('EROR', ...msg)
+        return this._log('EROR', 'MAIN', ...msg)
     }
 
     /**
@@ -206,6 +206,6 @@ export class Logger {
      * @param msg The message.
      */
     public dbug(...msg: string[]) {
-        return this._log('DBUG', ...msg)
+        return this._log('DBUG', 'MAIN', ...msg)
     }
 }

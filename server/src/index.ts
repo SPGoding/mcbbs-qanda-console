@@ -181,11 +181,8 @@ async function requestListener(req: http.IncomingMessage, res: http.ServerRespon
                     const commingMinimumHeart = parseInt(data.minimumHeart as string)
                     const commingMinimumHeartFirstPlace = parseInt(data.minimumHeartFirstPlace as string)
                     logger
-                        .info('Consts')
-                        .indent()
-                        .info(`- ${config.minimumHeartFirstPlace}, ${config.minimumHeart}.`)
-                        .info(`+ ${commingMinimumHeartFirstPlace}, ${commingMinimumHeart}.`)
-                        .indent(-1)
+                        .info('Consts', `- ${config.minimumHeartFirstPlace}, ${config.minimumHeart}.`)
+                        .info('Consts', `+ ${commingMinimumHeartFirstPlace}, ${commingMinimumHeart}.`)
                     config.minimumHeart = commingMinimumHeart
                     config.minimumHeartFirstPlace = commingMinimumHeartFirstPlace
                     await writeConfig<Config>('config.json', config)
@@ -206,11 +203,7 @@ async function requestListener(req: http.IncomingMessage, res: http.ServerRespon
             if (data.password && md5(data.password.toString()) === config.password) {
                 if (data.value) {
                     const commingValue = data.value as string
-                    logger
-                        .info('History')
-                        .indent()
-                        .info(`- ${JSON.stringify(history)}.`, `+ ${commingValue}.`)
-                        .indent(-1)
+                    logger.info('History', `- ${JSON.stringify(history)}.`, `+ ${commingValue}.`)
                     history = JSON.parse(commingValue)
                     await writeConfig<History>('history.json', history)
                     res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' })
@@ -564,11 +557,7 @@ async function addUser(uid: number, heartInitial?: number) {
             user.heartInitial = heartInitial
             user.heartAttained = user.heartPresent - user.heartInitial - user.heartAbandoned
         }
-        logger
-            .info('Users')
-            .indent()
-            .info(`+ ${uid}: ${JSON.stringify(user)}.`)
-            .indent(-1)
+        logger.info('User', `+ ${uid}: ${JSON.stringify(user)}.`)
 
         users[uid] = user
         updateInfo(false)
@@ -579,11 +568,7 @@ async function addUser(uid: number, heartInitial?: number) {
 }
 
 function delUser(uid: number) {
-    logger
-        .info('Users')
-        .indent()
-        .info(`- ${uid}: ${JSON.stringify(users[uid])}.`)
-        .indent(-1)
+    logger.info('User', `- ${uid}: ${JSON.stringify(users[uid])}.`)
     delete users[uid]
     updateInfo(false)
 }
@@ -591,16 +576,11 @@ function delUser(uid: number) {
 function editUser(uid: number, heartInitial: number,
     heartAbandoned: number, banned: boolean) {
     const user = users[uid]
-    logger
-        .info('Users')
-        .indent()
-        .info(`- ${uid}: ${JSON.stringify(user)}.`)
+    logger.info('User', `- ${uid}: ${JSON.stringify(user)}.`)
     user.heartInitial = heartInitial
     user.heartAbandoned = heartAbandoned
     user.banned = banned
     user.heartAttained = user.heartPresent - user.heartInitial - user.heartAbandoned
-    logger
-        .info(`+ ${uid}: ${JSON.stringify(user)}.`)
-        .indent(-1)
+    logger.info('User', `+ ${uid}: ${JSON.stringify(user)}.`)
     updateInfo(false)
 }
