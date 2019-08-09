@@ -154,12 +154,13 @@ export class Logger {
         const date = new Date()
         const fixTwoDigits = (number: number) => number < 10 ? `0${number}` : number.toString()
         const fixThreeDigits = (number: number) => number < 10 ? `00${number}` : number < 100 ? `0${number}` : number.toString()
-        const time = `${fixTwoDigits(date.getHours())}:${fixTwoDigits(date.getMinutes())}:${
+        const time = `${date.getFullYear()}-${fixTwoDigits(date.getMonth() + 1)}-${fixTwoDigits(date.getDate())} ${
+            fixTwoDigits(date.getHours())}:${fixTwoDigits(date.getMinutes())}:${
             fixTwoDigits(date.getSeconds())}:${fixThreeDigits(date.getMilliseconds())}`
-        const day = `${date.getFullYear()}-${fixTwoDigits(date.getMonth() + 1)}-${fixTwoDigits(date.getDate())}`
+        const fileName = `${date.getFullYear()}-${fixTwoDigits(date.getMonth() + 1)}`
         msg.forEach(v => {
             const m = `[${time}] [MAIN] [${type}] ${'  '.repeat(this._indent)}${v}`
-            const logPath = path.join(__dirname, `logs/${day}.log`)
+            const logPath = path.join(__dirname, `logs/${fileName}.log`)
             if (!fs.pathExistsSync(path.dirname(logPath))) {
                 fs.mkdirSync(path.dirname(logPath))
             }

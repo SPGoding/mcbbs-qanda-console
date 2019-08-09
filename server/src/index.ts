@@ -183,8 +183,8 @@ async function requestListener(req: http.IncomingMessage, res: http.ServerRespon
                     logger
                         .info('Consts')
                         .indent()
-                        .info(`- ${config.minimumHeartFirstPlace}, ${config.minimumHeart}`)
-                        .info(`+ ${commingMinimumHeartFirstPlace}, ${commingMinimumHeart}`)
+                        .info(`- ${config.minimumHeartFirstPlace}, ${config.minimumHeart}.`)
+                        .info(`+ ${commingMinimumHeartFirstPlace}, ${commingMinimumHeart}.`)
                         .indent(-1)
                     config.minimumHeart = commingMinimumHeart
                     config.minimumHeartFirstPlace = commingMinimumHeartFirstPlace
@@ -209,7 +209,7 @@ async function requestListener(req: http.IncomingMessage, res: http.ServerRespon
                     logger
                         .info('History')
                         .indent()
-                        .info(`- ${JSON.stringify(history)}`, `+ ${commingValue}`)
+                        .info(`- ${JSON.stringify(history)}.`, `+ ${commingValue}.`)
                         .indent(-1)
                     history = JSON.parse(commingValue)
                     await writeConfig<History>('history.json', history)
@@ -594,13 +594,13 @@ function editUser(uid: number, heartInitial: number,
     logger
         .info('Users')
         .indent()
-        .info(`- ${uid}: ${JSON.stringify(user)}`)
+        .info(`- ${uid}: ${JSON.stringify(user)}.`)
     user.heartInitial = heartInitial
     user.heartAbandoned = heartAbandoned
     user.banned = banned
     user.heartAttained = user.heartPresent - user.heartInitial - user.heartAbandoned
     logger
-        .info(`+ ${uid}: ${JSON.stringify(user)}`)
+        .info(`+ ${uid}: ${JSON.stringify(user)}.`)
         .indent(-1)
     updateInfo(false)
 }
