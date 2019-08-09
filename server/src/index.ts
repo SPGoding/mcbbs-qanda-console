@@ -371,7 +371,7 @@ async function updateUserInfo() {
             }
         }
     } catch (e) {
-        logger.eror(`Updating info error: '${e}'.`)
+        logger.dbug(`Updating info error: '${e}'.`)
     }
 }
 
