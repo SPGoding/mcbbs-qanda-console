@@ -10,6 +10,7 @@ export interface Config {
     protocol: string,
     minimumHeart: number,
     minimumHeartFirstPlace: number,
+    endDate: string,
     keyFile?: string,
     certFile?: string
 }

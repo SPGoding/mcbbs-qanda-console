@@ -16,7 +16,8 @@ const logger = new Logger()
 
 let config: Config = {
     password: '', interval: NaN, port: NaN, host: '', protocol: 'http',
-    minimumHeart: NaN, minimumHeartFirstPlace: NaN, sleep: NaN
+    minimumHeart: NaN, minimumHeartFirstPlace: NaN, sleep: NaN,
+    endDate: ''
 }
 let users: Users = {}
 let history: History = {}
@@ -31,6 +32,7 @@ let increaseImage: Buffer
 let lastUpdateTime: Date
 
 let stopShowingRankImage = false
+let freeze = false
 
 async function requestListener(req: http.IncomingMessage, res: http.ServerResponse) {
     const ip = req.connection.remoteAddress
@@ -64,6 +66,7 @@ async function requestListener(req: http.IncomingMessage, res: http.ServerRespon
             res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' })
             res.end(JSON.stringify({
                 minimumHeart: config.minimumHeart, minimumHeartFirstPlace: config.minimumHeartFirstPlace,
+                endDate: config.endDate,
                 interval: config.interval, sleep: config.sleep
             }))
         } else if (req.url === '/api/update-counter') {
@@ -177,14 +180,16 @@ async function requestListener(req: http.IncomingMessage, res: http.ServerRespon
         } else if (req.url === '/api/edit-consts') {
             const data = await handlePost(req, res)
             if (data.password && md5(data.password.toString()) === config.password) {
-                if (data.minimumHeart && data.minimumHeartFirstPlace) {
+                if (data.minimumHeart && data.minimumHeartFirstPlace && data.endDate) {
                     const commingMinimumHeart = parseInt(data.minimumHeart as string)
                     const commingMinimumHeartFirstPlace = parseInt(data.minimumHeartFirstPlace as string)
+                    const commingEndDate = data.endDate as string
                     logger
-                        .info('Consts', `- ${config.minimumHeartFirstPlace}, ${config.minimumHeart}.`)
-                        .info('Consts', `+ ${commingMinimumHeartFirstPlace}, ${commingMinimumHeart}.`)
+                        .info('Consts', `- ${config.minimumHeartFirstPlace}, ${config.minimumHeart}, ${config.endDate}.`)
+                        .info('Consts', `+ ${commingMinimumHeartFirstPlace}, ${commingMinimumHeart}, ${commingEndDate}.`)
                     config.minimumHeart = commingMinimumHeart
                     config.minimumHeartFirstPlace = commingMinimumHeartFirstPlace
+                    config.endDate = commingEndDate
                     await writeConfig<Config>('config.json', config)
                     rankImage = await drawRankImage()
                     res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' })
@@ -226,7 +231,8 @@ async function startup() {
         config = await loadConfig<Config>('config.json',
             {
                 password: '', sleep: 500, interval: 600000, port: 80, host: '',
-                protocol: 'http', minimumHeart: 30, minimumHeartFirstPlace: 100
+                protocol: 'http', minimumHeart: 30, minimumHeartFirstPlace: 100,
+                endDate: '1970-01-01'
             })
         users = await loadConfig<Users>('users.json', {})
         history = await loadConfig<History>('history.json', {})
@@ -313,14 +319,35 @@ function getHtmlFromCode(code: 200 | 400 | 404) {
 }
 
 function check() {
-    if (!lastUpdateTime) {
-        lastUpdateTime = new Date()
-        updateInfo()
+    const now = new Date()
+    const fixTwoDigits = (number: number) => number < 10 ? `0${number}` : number.toString()
+    const toDate = (date: Date) => `${date.getFullYear()}-${fixTwoDigits(date.getMonth() + 1)}-${fixTwoDigits(date.getDate())}`
+    logger.dbug(`${toDate(lastUpdateTime)} : ${toDate(now)}`)
+    if (lastUpdateTime && toDate(lastUpdateTime) === config.endDate && toDate(now) === config.endDate) {
+        if (!freeze) {
+            logger.info('MAIN', 'Freezed.')
+            freeze = true
+            for (const uid in users) {
+                if (users.hasOwnProperty(uid)) {
+                    delUser(parseInt(uid))
+                }
+            }
+        }
     } else {
-        const now = new Date()
-        if (now.getMinutes() % (config.interval / 60000) === 0 && now.getTime() - lastUpdateTime.getTime() >= config.interval - 5000) {
-            updateInfo()
+        if (freeze) {
+            logger.info('MAIN', 'Started.')
+            freeze = false
+        }
+    }
+    if (!freeze) {
+        if (!lastUpdateTime) {
             lastUpdateTime = now
+            updateInfo()
+        } else {
+            if (now.getMinutes() % (config.interval / 60000) === 0 && now.getTime() - lastUpdateTime.getTime() >= config.interval - 5000) {
+                updateInfo()
+                lastUpdateTime = now
+            }
         }
     }
 }
@@ -345,9 +372,11 @@ async function updateInfo(toUpdateUserInfo = true) {
         }
     })
     writeConfig('history.json', history)
-    rankImage = await drawRankImage()
-    increaseImage = await drawIncreaseImage()
-    registrationBBCode = getRegistrationBBCode()
+    if (!freeze) {
+        rankImage = await drawRankImage()
+        increaseImage = await drawIncreaseImage()
+        registrationBBCode = getRegistrationBBCode()
+    }
     writeConfig('users.json', users)
 }
 

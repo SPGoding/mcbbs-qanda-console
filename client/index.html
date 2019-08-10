@@ -178,8 +178,10 @@
             第一名爱心最低要求（满足的第一名用户爱心数将显示为红色，设为 -1 禁用此功能）：<input id="edit-const-dialog-minimum-heart-first-place"
                 type="text" /><br />
             第二至九名爱心最低要求（未满足的用户所在行将显示为灰色，设为 -1 禁用此功能）：<input id="edit-const-dialog-minimum-heart" type="text" /><br />
-            每两轮统计之间的最短间隔时间（单位：毫秒。不好意思，只能在服务器上改 QwQ）：<input id="edit-const-dialog-interval" type="text" readonly /><br />
-            每统计两名用户的最短间隔时间（单位：毫秒。不好意思，只能在服务器上改 QwQ）：<input id="edit-const-dialog-sleep" type="text" readonly /><br />
+            本轮活动截止日期（到达该天零点后自动停止计数，请及时将排名图片保存到本地）：<input id="edit-const-dialog-enddate" type="text"
+                placeholder="yyyy-mm-dd" /><br />
+            每两轮统计之间的最短间隔时间（单位：毫秒。无法更改）：<input id="edit-const-dialog-interval" type="text" readonly /><br />
+            每统计两名用户的最短间隔时间（单位：毫秒。无法更改）：<input id="edit-const-dialog-sleep" type="text" readonly /><br />
         </div>
         <button type="button" onclick="confirmEditConst()" class="primary">确定</button>
         <button type="button" onclick="editConstDialog.open = false">取消</button>
@@ -202,7 +204,7 @@
             <p>欢迎您，问答大区版主，<a href="#" onclick="logout()">点此登出</a>。</p>
             <button type="button" onclick="editConst()" class="primary">编辑常数</button>
             <button type="button" onclick="editHistory()" class="primary">编辑历史</button>
-            <button type="button" onclick="toggleShowingRankImage()" class="warning">切换统计表状态</button><br />
+            <button type="button" onclick="toggleShowingRankImage()" class="warning">切换统计表显示状态</button><br />
             <button type="button" onclick="addUser()" class="primary">添加用户</button>
             <table id="users">
                 <tr>
@@ -227,14 +229,9 @@
         <hr />
         <h2>今日爱心增量条形统计图</h2>
         <img id="increase-image" />
-        <pre id="increase-image-bbcode">制作中…</pre>
+        <pre id="increase-image-bbcode">加载中…</pre>
         <hr />
-        <h2>近日爱心数目折线统计图</h2>
-        <pre>已删除</pre>
-        <hr />
-        <h2>一吨特性随叫随加...</h2>
-        什么也不要，只要版主姐姐的抱抱！<br />
-        没有抱抱给贡献献也可以！<br />
+        <h2>苟利国家生死以，岂因祸福避趋之</h2>
         MCBBS: <a href="http://www.mcbbs.net/?2444378" target="_blank">@SPGoding</a><br />
         GitHub: <a href="https://github.com/SPGoding/mcbbs-qanda-console" target="_blank">mcbbs-qanda-console</a>
     </div>
@@ -284,6 +281,7 @@
         const editConstDialogMinimumHeartFirstPlace = document.getElementById('edit-const-dialog-minimum-heart-first-place')
         const editConstDialogInterval = document.getElementById('edit-const-dialog-interval')
         const editConstDialogSleep = document.getElementById('edit-const-dialog-sleep')
+        const editConstDialogEnddate = document.getElementById('edit-const-dialog-enddate')
         const editHistoryDialog = document.getElementById('edit-history-dialog')
         const editHistoryDialogText = document.getElementById('edit-history-dialog-text')
 
@@ -400,6 +398,7 @@
             editConstDialogInterval.value = result.interval
             editConstDialogMinimumHeart.value = result.minimumHeart
             editConstDialogMinimumHeartFirstPlace.value = result.minimumHeartFirstPlace
+            editConstDialogEnddate.value = result.endDate
         }
 
         async function getHistory() {
@@ -461,8 +460,12 @@
         }
 
         async function confirmEditConst() {
+            if (!editConstDialogEnddate.value.match(/^\d{4}\-\d{2}\-\d{2}$/)) {
+                alert('截止日期必须采用形如 yyyy-mm-dd 的结构')
+                return
+            }
             const response = await request('POST', api.editConsts, `password=${password.value}&minimumHeart=${editConstDialogMinimumHeart.value
-                }&minimumHeartFirstPlace=${editConstDialogMinimumHeartFirstPlace.value}`)
+                }&minimumHeartFirstPlace=${editConstDialogMinimumHeartFirstPlace.value}&endDate=${editConstDialogEnddate.value}`)
             await updateAll()
             if (response === 'S') {
                 editConstDialog.open = false
