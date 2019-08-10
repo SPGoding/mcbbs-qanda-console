@@ -322,7 +322,6 @@ function check() {
     const now = new Date()
     const fixTwoDigits = (number: number) => number < 10 ? `0${number}` : number.toString()
     const toDate = (date: Date) => `${date.getFullYear()}-${fixTwoDigits(date.getMonth() + 1)}-${fixTwoDigits(date.getDate())}`
-    logger.dbug(`${toDate(lastUpdateTime)} : ${toDate(now)}`)
     if (lastUpdateTime && toDate(lastUpdateTime) === config.endDate && toDate(now) === config.endDate) {
         if (!freeze) {
             logger.info('MAIN', 'Freezed.')
