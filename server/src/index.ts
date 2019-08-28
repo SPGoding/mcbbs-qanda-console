@@ -1,11 +1,12 @@
-import * as rp from 'request-promise-native'
+import * as constants from 'constants'
+import * as fs from 'fs-extra'
 import * as http from 'http'
 import * as https from 'https'
-import * as fs from 'fs-extra'
+import * as md5 from 'md5'
 import * as path from 'path'
 import * as qs from 'querystring'
-import * as md5 from 'md5'
 import * as read from 'read'
+import * as rp from 'request-promise-native'
 import { Canvas, loadImage } from 'canvas'
 import {
     History, Users, loadConfig, Config, RankElement, getUserViaWebCode, writeConfig,
@@ -248,7 +249,8 @@ async function startup() {
             https
                 .createServer({
                     key: fs.readFileSync(config.keyFile),
-                    cert: fs.readFileSync(config.certFile)
+                    cert: fs.readFileSync(config.certFile),
+                    secureOptions: constants.SSL_OP_NO_TLSv1 | constants.SSL_OP_NO_TLSv1_1
                 }, requestListener)
                 .listen(config.port)
                 .on('error', e => {
