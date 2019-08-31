@@ -328,11 +328,6 @@ function check() {
         if (!freeze) {
             logger.info('MAIN', 'Freezed.')
             freeze = true
-            for (const uid in users) {
-                if (users.hasOwnProperty(uid)) {
-                    delUser(parseInt(uid))
-                }
-            }
         }
     } else {
         if (freeze) {
@@ -598,9 +593,11 @@ async function addUser(uid: number, heartInitial?: number) {
 }
 
 function delUser(uid: number) {
-    logger.info('User', `- ${uid}: ${JSON.stringify(users[uid])}.`)
-    delete users[uid]
-    updateInfo(false)
+    if (users[uid] !== undefined) {
+        logger.info('User', `- ${uid}: ${JSON.stringify(users[uid])}.`)
+        delete users[uid]
+        updateInfo(false)
+    }
 }
 
 function editUser(uid: number, heartInitial: number,
