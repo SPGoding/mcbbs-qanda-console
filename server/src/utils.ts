@@ -80,71 +80,6 @@ function getStringBetweenStrings(input: string, start: string, end: string) {
     }
 }
 
-export function getUserViaWebCode(webCode: string, oldUser?: User): User {
-    try {
-        const username = getStringBetweenStrings(webCode, '<title>', '的个人资料 -  Minecraft(我的世界)中文论坛 - </title>')
-        const heartPresent = parseInt(getStringBetweenStrings(webCode, '<li><em>爱心</em>', ' 心</li>'))
-
-        if (!oldUser) {
-            oldUser = {
-                banned: false,
-                heartAbandoned: 0,
-                heartInitial: heartPresent,
-                heartAttained: NaN, // Won't be inherited.
-                heartPresent: NaN, // Won't be inherited.
-                username: '' // Won't be inherited.
-            }
-        }
-
-        const { banned: banned, heartAbandoned: heartAbandoned, heartInitial: heartInitial } = oldUser
-
-        return {
-            username: username,
-            heartInitial: heartInitial,
-            heartAbandoned: heartAbandoned,
-            heartPresent: heartPresent,
-            heartAttained: heartPresent - heartInitial - heartAbandoned,
-            banned: banned
-        }
-    } catch {
-        throw 'Invalid user page.'
-    }
-}
-
-export function getBBCodeOfTable(table: Table) {
-    const tablePrefix = '[align=center][table=540,white]'
-    const tableSuffix = '[/table][/align]'
-    const rowPrefix = '[tr]'
-    const rowSuffix = '[/tr]'
-    const dataPrefix = '[td]'
-    const dataSuffix = '[/td]'
-
-    let ans = `${tablePrefix}\n`
-    for (const row of table) {
-        ans += rowPrefix
-        for (const element of row) {
-            ans += `${dataPrefix}${element}${dataSuffix}`
-        }
-        ans += `${rowSuffix}\n`
-    }
-    ans += tableSuffix
-    return ans
-}
-
-export function sleep(ms: number) {
-    return new Promise<void>(resolve => {
-        setTimeout(resolve, ms)
-    })
-}
-
-export function drawBar(ctx: CanvasRenderingContext2D, upperLeftCornerX: number,
-    upperLeftCornerY: number, width: number, height: number, color: string | CanvasGradient | CanvasPattern) {
-    ctx.save()
-    ctx.fillStyle = color
-    ctx.fillRect(upperLeftCornerX, upperLeftCornerY, width, height)
-    ctx.restore()
-}
-
 /**
  * A logger.
  */
@@ -209,4 +144,78 @@ export class Logger {
     public dbug(...msg: string[]) {
         return this._log('DBUG', 'MAIN', ...msg)
     }
+}
+
+export const logger = new Logger()
+
+export function getUserViaWebCode(webCode: string, oldUser?: User): User {
+    try {
+        const username = getStringBetweenStrings(webCode, '<title>', '的个人资料 -  Minecraft(我的世界)中文论坛 - </title>')
+        const heartPresent = parseInt(getStringBetweenStrings(webCode, '<li><em>爱心</em>', ' 心</li>'))
+
+        if (oldUser) {
+            const { username: oldUsername } = oldUser
+            if (oldUsername !== username) {
+                logger.info('User', `'${oldUsername}' changed zis name to '${username}'.`)
+            }
+        }
+
+        if (!oldUser) {
+            oldUser = {
+                banned: false,
+                heartAbandoned: 0,
+                heartInitial: heartPresent,
+                heartAttained: NaN, // Won't be inherited.
+                heartPresent: NaN, // Won't be inherited.
+                username: '' // Won't be inherited.
+            }
+        }
+
+        const { banned: banned, heartAbandoned: heartAbandoned, heartInitial: heartInitial } = oldUser
+
+        return {
+            username: username,
+            heartInitial: heartInitial,
+            heartAbandoned: heartAbandoned,
+            heartPresent: heartPresent,
+            heartAttained: heartPresent - heartInitial - heartAbandoned,
+            banned: banned
+        }
+    } catch {
+        throw 'Invalid user page.'
+    }
+}
+
+export function getBBCodeOfTable(table: Table) {
+    const tablePrefix = '[align=center][table=540,white]'
+    const tableSuffix = '[/table][/align]'
+    const rowPrefix = '[tr]'
+    const rowSuffix = '[/tr]'
+    const dataPrefix = '[td]'
+    const dataSuffix = '[/td]'
+
+    let ans = `${tablePrefix}\n`
+    for (const row of table) {
+        ans += rowPrefix
+        for (const element of row) {
+            ans += `${dataPrefix}${element}${dataSuffix}`
+        }
+        ans += `${rowSuffix}\n`
+    }
+    ans += tableSuffix
+    return ans
+}
+
+export function sleep(ms: number) {
+    return new Promise<void>(resolve => {
+        setTimeout(resolve, ms)
+    })
+}
+
+export function drawBar(ctx: CanvasRenderingContext2D, upperLeftCornerX: number,
+    upperLeftCornerY: number, width: number, height: number, color: string | CanvasGradient | CanvasPattern) {
+    ctx.save()
+    ctx.fillStyle = color
+    ctx.fillRect(upperLeftCornerX, upperLeftCornerY, width, height)
+    ctx.restore()
 }

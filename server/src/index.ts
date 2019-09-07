@@ -10,10 +10,8 @@ import * as rp from 'request-promise-native'
 import { Canvas, loadImage } from 'canvas'
 import {
     History, Users, loadConfig, Config, RankElement, getUserViaWebCode, writeConfig,
-    getBBCodeOfTable, Table, Row, sleep, drawBar, Counter, Logger
+    getBBCodeOfTable, Table, Row, sleep, drawBar, Counter, Logger, logger
 } from './utils'
-
-const logger = new Logger()
 
 let config: Config = {
     password: '', interval: NaN, port: NaN, host: '', protocol: 'http',
