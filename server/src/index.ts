@@ -535,6 +535,12 @@ async function drawIncreaseImage() {
         while (ctx.measureText(un).width > barWidth) {
             un = un.slice(0, -1)
         }
+
+        // Special case for 爱心大魔王
+        if (username === '爱心大魔王') {
+            un = '魔王'
+        }
+
         ctx.fillStyle = '#000000'
         ctx.fillText(un, i * barWidth + barWidth / 2 - ctx.measureText(un).width / 2,
             canvas.height - fontHeight * 2)
