@@ -182,7 +182,7 @@ async function requestListener(req: http.IncomingMessage, res: http.ServerRespon
         } else if (req.url === '/api/edit-consts') {
             const data = await handlePost(req, res)
             if (data.password && md5(data.password.toString()) === config.password) {
-                if (data.minimumHeart && data.minimumHeartFirstPlace && data.endDate && data.timestamp) {
+                if (data.minimumHeart && data.minimumHeartFirstPlace && data.endDate) {
                     const commingMinimumHeart = parseInt(data.minimumHeart as string)
                     const commingMinimumHeartFirstPlace = parseInt(data.minimumHeartFirstPlace as string)
                     const commingEndDate = data.endDate as string
