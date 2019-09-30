@@ -180,6 +180,8 @@
             第二至九名爱心最低要求（未满足的用户所在行将显示为灰色，设为 -1 禁用此功能）：<input id="edit-const-dialog-minimum-heart" type="text" /><br />
             本轮活动截止日期（到达该天零点后自动停止计数，请及时将排名图片保存到本地）：<input id="edit-const-dialog-enddate" type="text"
                 placeholder="yyyy-mm-dd" /><br />
+            图片底部时间戳伪造（留空则使用真实时间）：<input id="edit-const-dialog-timestamp" type="text"
+                placeholder="更新于 yyyy年mm月dd日 hh:mm" /><br />
             每两轮统计之间的最短间隔时间（单位：毫秒。无法更改）：<input id="edit-const-dialog-interval" type="text" readonly /><br />
             每统计两名用户的最短间隔时间（单位：毫秒。无法更改）：<input id="edit-const-dialog-sleep" type="text" readonly /><br />
         </div>
@@ -282,6 +284,7 @@
         const editConstDialogInterval = document.getElementById('edit-const-dialog-interval')
         const editConstDialogSleep = document.getElementById('edit-const-dialog-sleep')
         const editConstDialogEnddate = document.getElementById('edit-const-dialog-enddate')
+        const editConstDialogTimestamp = document.getElementById('edit-const-dialog-timestamp')
         const editHistoryDialog = document.getElementById('edit-history-dialog')
         const editHistoryDialogText = document.getElementById('edit-history-dialog-text')
 
@@ -399,6 +402,7 @@
             editConstDialogMinimumHeart.value = result.minimumHeart
             editConstDialogMinimumHeartFirstPlace.value = result.minimumHeartFirstPlace
             editConstDialogEnddate.value = result.endDate
+            editConstDialogTimestamp.value = result.timestamp
         }
 
         async function getHistory() {
@@ -465,7 +469,7 @@
                 return
             }
             const response = await request('POST', api.editConsts, `password=${password.value}&minimumHeart=${editConstDialogMinimumHeart.value
-                }&minimumHeartFirstPlace=${editConstDialogMinimumHeartFirstPlace.value}&endDate=${editConstDialogEnddate.value}`)
+                }&minimumHeartFirstPlace=${editConstDialogMinimumHeartFirstPlace.value}&endDate=${editConstDialogEnddate.value}&timestamp=${editConstDialogTimestamp.value}`)
             await updateAll()
             if (response === 'S') {
                 editConstDialog.open = false

@@ -28,6 +28,8 @@ let updateTimeInfo = ''
 let registrationBBCode = ''
 let increaseImage: Buffer
 
+let fakeUpdateTimeInfo = ''
+
 let lastUpdateTime: Date
 
 let stopShowingRankImage = false
@@ -66,7 +68,8 @@ async function requestListener(req: http.IncomingMessage, res: http.ServerRespon
             res.end(JSON.stringify({
                 minimumHeart: config.minimumHeart, minimumHeartFirstPlace: config.minimumHeartFirstPlace,
                 endDate: config.endDate,
-                interval: config.interval, sleep: config.sleep
+                interval: config.interval, sleep: config.sleep,
+                timestamp: fakeUpdateTimeInfo
             }))
         } else if (req.url === '/api/update-counter') {
             const day = getTime(false)
@@ -179,16 +182,20 @@ async function requestListener(req: http.IncomingMessage, res: http.ServerRespon
         } else if (req.url === '/api/edit-consts') {
             const data = await handlePost(req, res)
             if (data.password && md5(data.password.toString()) === config.password) {
-                if (data.minimumHeart && data.minimumHeartFirstPlace && data.endDate) {
+                if (data.minimumHeart && data.minimumHeartFirstPlace && data.endDate && data.timestamp) {
                     const commingMinimumHeart = parseInt(data.minimumHeart as string)
                     const commingMinimumHeartFirstPlace = parseInt(data.minimumHeartFirstPlace as string)
                     const commingEndDate = data.endDate as string
+                    const commingTimestamp = data.timestamp as string
                     logger
-                        .info('Consts', `- ${config.minimumHeartFirstPlace}, ${config.minimumHeart}, ${config.endDate}.`)
-                        .info('Consts', `+ ${commingMinimumHeartFirstPlace}, ${commingMinimumHeart}, ${commingEndDate}.`)
+                        .info('Consts', `- ${
+                            config.minimumHeartFirstPlace}, ${config.minimumHeart}, ${config.endDate}, ${fakeUpdateTimeInfo}.`)
+                        .info('Consts', `+ ${
+                            commingMinimumHeartFirstPlace}, ${commingMinimumHeart}, ${commingEndDate}, ${commingTimestamp}.`)
                     config.minimumHeart = commingMinimumHeart
                     config.minimumHeartFirstPlace = commingMinimumHeartFirstPlace
                     config.endDate = commingEndDate
+                    fakeUpdateTimeInfo = commingTimestamp
                     await writeConfig<Config>('config.json', config)
                     rankImage = await drawRankImage()
                     res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' })
@@ -479,7 +486,11 @@ async function drawRankImage() {
             rowNumber++
         }
         ctx.fillStyle = '#81157d'
-        ctx.fillText(updateTimeInfo, canvas.width / 2 - ctx.measureText(updateTimeInfo).width / 2, canvas.height - 4)
+        if (fakeUpdateTimeInfo) {
+            ctx.fillText(fakeUpdateTimeInfo, canvas.width / 2 - ctx.measureText(fakeUpdateTimeInfo).width / 2, canvas.height - 4)
+        } else {
+            ctx.fillText(updateTimeInfo, canvas.width / 2 - ctx.measureText(updateTimeInfo).width / 2, canvas.height - 4)
+        }
 
         return canvas.toBuffer('image/png')
     } else {
