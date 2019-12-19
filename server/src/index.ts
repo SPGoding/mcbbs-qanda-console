@@ -449,7 +449,7 @@ table, th, td {
 }
 
 th, td {
-    padding: 4px;
+    padding: 2px;
     text-align: center;
     font-weight: bold;
 }
