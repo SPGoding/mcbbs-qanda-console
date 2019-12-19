@@ -9,7 +9,7 @@ export interface Config {
     host: string,
     protocol: string,
     minimumHeart: number,
-    minimumHeartFirstPlace: number,
+    emeraldAmount: number,
     endDate: string,
     keyFile?: string,
     certFile?: string
