@@ -15,7 +15,7 @@ import {
 
 let config: Config = {
     password: '', interval: NaN, port: NaN, host: '', protocol: 'http',
-    minimumHeart: NaN, minimumHeartFirstPlace: NaN, sleep: NaN,
+    minimumHeart: NaN, emeraldAmount: NaN, sleep: NaN,
     endDate: ''
 }
 let users: Users = {}
@@ -23,7 +23,7 @@ let history: History = {}
 let rank: RankElement[]
 let counter: Counter = {}
 
-let rankImage: Buffer
+let rankTable: string
 let updateTimeInfo = ''
 let registrationBBCode = ''
 let increaseImage: Buffer
@@ -32,7 +32,7 @@ let fakeUpdateTimeInfo = ''
 
 let lastUpdateTime: Date
 
-let stopShowingRankImage = false
+let stopShowingRankTable = false
 let freeze = false
 
 async function requestListener(req: http.IncomingMessage, res: http.ServerResponse) {
@@ -49,8 +49,8 @@ async function requestListener(req: http.IncomingMessage, res: http.ServerRespon
                 logger.dbug(`New unique ip ${ip}.`)
             }
             await writeConfig('counter.json', counter)
-            res.writeHead(200, { 'Content-Type': 'image/png' })
-            res.end(rankImage)
+            res.writeHead(200, { 'Content-Type': 'image/svg+xml; charset=utf-8' })
+            res.end(rankTable)
         } else if (req.url && req.url.split('?')[0] === '/api/get-increase-image') {
             res.writeHead(200, { 'Content-Type': 'image/png' })
             res.end(increaseImage)
@@ -66,7 +66,7 @@ async function requestListener(req: http.IncomingMessage, res: http.ServerRespon
         } else if (req.url === '/api/get-consts') {
             res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' })
             res.end(JSON.stringify({
-                minimumHeart: config.minimumHeart, minimumHeartFirstPlace: config.minimumHeartFirstPlace,
+                minimumHeart: config.minimumHeart, emeraldAmount: config.emeraldAmount,
                 endDate: config.endDate,
                 interval: config.interval, sleep: config.sleep,
                 timestamp: fakeUpdateTimeInfo
@@ -170,8 +170,8 @@ async function requestListener(req: http.IncomingMessage, res: http.ServerRespon
         } else if (req.url === '/api/toggle-showing-rank-image') {
             const data = await handlePost(req, res)
             if (data.password && md5(data.password.toString()) === config.password) {
-                stopShowingRankImage = !stopShowingRankImage
-                rankImage = await drawRankImage()
+                stopShowingRankTable = !stopShowingRankTable
+                rankTable = getRankTable()
                 res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' })
                 res.end('S')
             } else {
@@ -182,22 +182,22 @@ async function requestListener(req: http.IncomingMessage, res: http.ServerRespon
         } else if (req.url === '/api/edit-consts') {
             const data = await handlePost(req, res)
             if (data.password && md5(data.password.toString()) === config.password) {
-                if (data.minimumHeart && data.minimumHeartFirstPlace && data.endDate) {
+                if (data.minimumHeart && data.emeraldAmount && data.endDate) {
                     const commingMinimumHeart = parseInt(data.minimumHeart as string)
-                    const commingMinimumHeartFirstPlace = parseInt(data.minimumHeartFirstPlace as string)
+                    const commingEmeraldAmount = parseInt(data.emeraldAmount as string)
                     const commingEndDate = data.endDate as string
                     const commingTimestamp = data.timestamp as string
                     logger
                         .info('Consts', `- ${
-                            config.minimumHeartFirstPlace}, ${config.minimumHeart}, ${config.endDate}, ${fakeUpdateTimeInfo}.`)
+                            config.emeraldAmount}, ${config.minimumHeart}, ${config.endDate}, ${fakeUpdateTimeInfo}.`)
                         .info('Consts', `+ ${
-                            commingMinimumHeartFirstPlace}, ${commingMinimumHeart}, ${commingEndDate}, ${commingTimestamp}.`)
+                            commingEmeraldAmount}, ${commingMinimumHeart}, ${commingEndDate}, ${commingTimestamp}.`)
                     config.minimumHeart = commingMinimumHeart
-                    config.minimumHeartFirstPlace = commingMinimumHeartFirstPlace
+                    config.emeraldAmount = commingEmeraldAmount
                     config.endDate = commingEndDate
                     fakeUpdateTimeInfo = commingTimestamp
                     await writeConfig<Config>('config.json', config)
-                    rankImage = await drawRankImage()
+                    rankTable = getRankTable()
                     res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' })
                     res.end('S')
                 } else {
@@ -237,7 +237,7 @@ async function startup() {
         config = await loadConfig<Config>('config.json',
             {
                 password: '', sleep: 500, interval: 600000, port: 80, host: '',
-                protocol: 'http', minimumHeart: 30, minimumHeartFirstPlace: 100,
+                protocol: 'http', minimumHeart: 30, emeraldAmount: 100,
                 endDate: '1970-01-01'
             })
         users = await loadConfig<Users>('users.json', {})
@@ -374,7 +374,7 @@ async function updateInfo(toUpdateUserInfo = true) {
     })
     writeConfig('history.json', history)
     if (!freeze) {
-        rankImage = await drawRankImage()
+        rankTable = getRankTable()
         increaseImage = await drawIncreaseImage()
         registrationBBCode = getRegistrationBBCode()
     }
@@ -428,78 +428,117 @@ function getTime(toMinutes = true) {
     }
 }
 
-async function drawRankImage() {
-    if (!stopShowingRankImage) {
-        const table: Table = []
-        // 初步制作表格
-        for (const ele of rank.slice(0, 10)) {
-            const row = [rank.indexOf(ele) + 1, users[ele.uid].username, ele.heart]
+function getRankTable() {
+    const width = 550
+    const height = 340
+    const primaryBackColor = '#fcf1da'
+    const titleBackColor = '#ffbf00'
+    const primaryForeColor = '#000000'
+    const grayForeColor = '#444444'
+    const titleForeColor = '#FFFFFF'
+    const timeColor = '#81157d'
+    const css = `<style>
+table {
+    width: ${width}px;
+    border-collapse: collapse;
+}
+
+table, th, td {
+    border-top: 1px solid ${titleBackColor};
+    border-bottom: 1px solid ${titleBackColor};
+}
+
+th, td {
+    padding: 4px;
+    text-align: center;
+    font-weight: bold;
+}
+
+th {
+    background-color: ${titleBackColor};
+    color: ${titleForeColor};
+}
+
+td {
+    background-color: ${primaryBackColor};
+    color: ${primaryForeColor};
+}
+
+td.gray {
+    background-color: ${primaryBackColor};
+    color: ${grayForeColor};
+    font-weight: normal;
+}
+
+div.time {
+    font-weight: bold;
+    color: ${timeColor};
+    text-align: center;
+    width: 100%;
+    position: absolute;
+    bottom: 0;
+}
+</style>`
+    const prefix = `<?xml version='1.0' standalone='no'?><!DOCTYPE svg PUBLIC '-//W3C//DTD SVG 1.1//EN' 'http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd'><svg width='${width}px' height='${height}px' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink'><foreignObject x="0" y="0" width="${width}px" height="${height}px">${css}<body xmlns="http://www.w3.org/1999/xhtml">`
+    const suffix = '</body></foreignObject></svg>'
+    let body = '<p>暂停公示</p>'
+
+    if (!stopShowingRankTable) {
+        const tablePrefix = '<table>'
+        const tableSuffix = '</table>'
+
+        const table: Table = [
+            ['名次', '用户名', '已获爱心', '预计绿宝石']
+        ]
+        const topTen = rank.slice(0, 10)
+        let emeraldAmount = config.emeraldAmount
+        let heartAmount = 0
+        for (const ele of topTen) {
+            if (ele.heart >= config.minimumHeart) {
+                emeraldAmount -= 1
+                heartAmount += ele.heart
+            }
+        }
+        const emeraldPerHeart = emeraldAmount / heartAmount
+
+        // Initialize the table.
+        for (const ele of topTen) {
+            const emeraldCount = ele.heart >= config.minimumHeart ? 1 + Math.round(ele.heart * emeraldPerHeart) : 0
+            const row = [rank.indexOf(ele) + 1, users[ele.uid].username, ele.heart, emeraldCount]
             table.push(row)
         }
-        // 细致化表格内容
+        // Deal with draw.
         for (let i = 0; i < table.length; i++) {
             const row = table[i]
             if (i >= 1) {
                 const lastRow = table[i - 1]
-                // 处理并列排名
                 if (row[2] === lastRow[2]) {
                     row[0] = lastRow[0]
                 }
             }
         }
-
-        const canvas = new Canvas(530, 260)
-        const ctx = canvas.getContext('2d')
-        const img = await loadImage(path.join(__dirname, '../img/table.png'))
-        ctx.drawImage(img, 0, 0)
-
-        const fontHeight = 20
-        const rowHeight = 21
-        const columnLeftMargins = [0, 94, 94 + 296]
-        const columnWidths = [94, 296, 138]
-        ctx.font = `${fontHeight}px Microsoft Yahei`
-        ctx.fillStyle = '#000000'
-
-        let rowNumber = 1
-        for (const row of table) {
-            let cellNumber = 0
-            let heartColor = '#000000'
-            let otherColor = '#000000'
-            if (config.minimumHeart !== -1 && row[2] < config.minimumHeart) {
-                otherColor = '#666666'
-                heartColor = '#666666'
-            }
-            if (config.minimumHeartFirstPlace !== -1 && row[0] === 1 && row[2] >= config.minimumHeartFirstPlace) {
-                heartColor = '#ff0000'
-            }
-            for (const cell of row) {
-                if (cellNumber === 2) {
-                    ctx.fillStyle = heartColor
-                } else {
-                    ctx.fillStyle = otherColor
-                }
-                ctx.fillText(cell.toString(),
-                    columnLeftMargins[cellNumber] + (columnWidths[cellNumber] - ctx.measureText(cell.toString()).width) / 2,
-                    rowNumber * rowHeight + fontHeight)
-                cellNumber++
-            }
-            rowNumber++
+        // Output table HTML.
+        const rows: string[] = []
+        for (let i = 0; i < table.length; i++) {
+            const row = table[i]
+            const rowPrefix = '<tr>'
+            const rowSuffix = '</tr>'
+            const cellPrefix = i === 0 ?
+                '<th>' :
+                `<td${row[2] >= config.minimumHeart ? '' : ' class="gray"'}>`
+            const cellSuffix = i === 0 ?
+                '</th>' :
+                '</td>'
+            rows.push(`${rowPrefix}${cellPrefix}${row.join(`${cellSuffix}${cellPrefix}`)}${cellSuffix}${rowSuffix}`)
         }
-        ctx.fillStyle = '#81157d'
-        if (fakeUpdateTimeInfo) {
-            ctx.fillText(fakeUpdateTimeInfo, canvas.width / 2 - ctx.measureText(fakeUpdateTimeInfo).width / 2, canvas.height - 4)
-        } else {
-            ctx.fillText(updateTimeInfo, canvas.width / 2 - ctx.measureText(updateTimeInfo).width / 2, canvas.height - 4)
-        }
+        const tableHtml = rows.join('')
+        
+        // Get time HTML.
+        const timeHtml = `<div class="time">${fakeUpdateTimeInfo || updateTimeInfo}</div>`
 
-        return canvas.toBuffer('image/png')
-    } else {
-        const canvas = new Canvas(530, 260)
-        const ctx = canvas.getContext('2d')
-        const img = await loadImage(path.join(__dirname, '../img/static-table.png'))
-        ctx.drawImage(img, 0, 0)
-        return canvas.toBuffer('image/png')
+        body = `${tablePrefix}${tableHtml}${tableSuffix}${timeHtml}`
     }
+    return `${prefix}${body}${suffix}`
 }
 
 async function drawIncreaseImage() {

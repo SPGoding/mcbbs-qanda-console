@@ -175,9 +175,9 @@
     <dialog id="edit-const-dialog">
         <h1>编辑常数</h1>
         <div style="text-align: right;">
-            第一名爱心最低要求（满足的第一名用户爱心数将显示为红色，设为 -1 禁用此功能）：<input id="edit-const-dialog-minimum-heart-first-place"
+            获取奖励的爱心最低要求（未满足的用户所在行将显示为灰色，设为 -1 禁用此功能）：<input id="edit-const-dialog-minimum-heart" type="text" /><br />
+            绿宝石奖励总数（满足条件的用户将获得至少 1 绿宝石，剩余绿宝石按爱心比例分配）：<input id="edit-const-dialog-emerald-amount"
                 type="text" /><br />
-            第二至九名爱心最低要求（未满足的用户所在行将显示为灰色，设为 -1 禁用此功能）：<input id="edit-const-dialog-minimum-heart" type="text" /><br />
             本轮活动截止日期（到达该天零点后自动停止计数，请及时将排名图片保存到本地）：<input id="edit-const-dialog-enddate" type="text"
                 placeholder="yyyy-mm-dd" /><br />
             图片底部时间戳伪造（留空则使用真实时间）：<input id="edit-const-dialog-timestamp" type="text"
@@ -280,7 +280,7 @@
         const usersTable = document.getElementById('users')
         const editConstDialog = document.getElementById('edit-const-dialog')
         const editConstDialogMinimumHeart = document.getElementById('edit-const-dialog-minimum-heart')
-        const editConstDialogMinimumHeartFirstPlace = document.getElementById('edit-const-dialog-minimum-heart-first-place')
+        const editConstDialogEmeraldAmount = document.getElementById('edit-const-dialog-emerald-amount')
         const editConstDialogInterval = document.getElementById('edit-const-dialog-interval')
         const editConstDialogSleep = document.getElementById('edit-const-dialog-sleep')
         const editConstDialogEnddate = document.getElementById('edit-const-dialog-enddate')
@@ -292,7 +292,7 @@
         let users
 
         // Set BBCodes
-        rankImageBBCode.innerHTML = `[img=530,260]${url}/${api.getRankImage}[/img]`
+        rankImageBBCode.innerHTML = `[img=550,340]${url}/${api.getRankImage}[/img]`
         increaseImageBBCode.innerHTML = `[img=400,432]${url}/${api.getIncreaseImage}[/img]`
 
         // Auto login
@@ -400,7 +400,7 @@
             editConstDialogSleep.value = result.sleep
             editConstDialogInterval.value = result.interval
             editConstDialogMinimumHeart.value = result.minimumHeart
-            editConstDialogMinimumHeartFirstPlace.value = result.minimumHeartFirstPlace
+            editConstDialogEmeraldAmount.value = result.emeraldAmount
             editConstDialogEnddate.value = result.endDate
             editConstDialogTimestamp.value = result.timestamp
         }
@@ -469,7 +469,7 @@
                 return
             }
             const response = await request('POST', api.editConsts, `password=${password.value}&minimumHeart=${editConstDialogMinimumHeart.value
-                }&minimumHeartFirstPlace=${editConstDialogMinimumHeartFirstPlace.value}&endDate=${editConstDialogEnddate.value}&timestamp=${editConstDialogTimestamp.value}`)
+                }&emeraldAmount=${editConstDialogEmeraldAmount.value}&endDate=${editConstDialogEnddate.value}&timestamp=${editConstDialogTimestamp.value}`)
             await updateAll()
             if (response === 'S') {
                 editConstDialog.open = false
