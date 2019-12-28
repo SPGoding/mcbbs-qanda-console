@@ -438,6 +438,10 @@ function getRankTable() {
     const titleForeColor = '#FFFFFF'
     const timeColor = '#81157d'
     const css = `<style>
+body {
+    margin: 0;
+}
+
 table {
     width: ${width}px;
     border-collapse: collapse;
