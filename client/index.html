@@ -153,44 +153,53 @@
     <dialog id="add-user-dialog">
         <h1>添加用户</h1>
         <div style="text-align: right;">
-            UID：<input id="add-user-dialog-uid" type="text" placeholder="UID" /><br />
-            初始爱心数量：<input id="add-user-dialog-heart-initial" type="text" placeholder="留空自动获取" /><br />
+            UID：<input id="add-user-dialog-uid" type="text" placeholder="UID" /><br>
+            初始爱心数量：<input id="add-user-dialog-heart-initial" type="text" placeholder="留空自动获取" /><br>
         </div>
         <button type="button" onclick="confirmAddUser()" class="primary">添加</button>
         <button type="button" onclick="addUserDialog.open = false">取消</button>
     </dialog>
+    <dialog id="batch-add-user-dialog">
+        <h1>批量添加用户</h1>
+        <div style="text-align: left;">
+            网页内容：<br>
+            <textarea id="batch-add-user-dialog-uid" type="text"
+                placeholder="请复制粘贴整页内容（注意别把一楼的示例丢进来）" rows="16" cols="64"></textarea><br>
+        </div>
+        <button type="button" onclick="confirmBatchAddUser()" class="primary">添加</button>
+        <button type="button" onclick="batchAddUserDialog.open = false">取消</button>
+    </dialog>
     <dialog id="edit-user-dialog">
         <h1 id="edit-user-dialog-title">编辑用户</h1>
         <div style="text-align: right;">
-            UID：<input id="edit-user-dialog-uid" type="text" placeholder="UID" /><br />
+            UID：<input id="edit-user-dialog-uid" type="text" placeholder="UID" /><br>
             初始爱心：<input id="edit-user-dialog-heart-initial" type="text" placeholder="初始爱心数量"
-                value="${user.heartInitial}" /><br />
+                value="${user.heartInitial}" /><br>
             放弃爱心：<input id="edit-user-dialog-heart-abandoned" type="text" placeholder="放弃爱心数量"
-                value="${user.heartAbandoned}" /><br />
+                value="${user.heartAbandoned}" /><br>
         </div>
-        禁赛：<input id="edit-user-dialog-banned" type="checkbox" /><br />
+        禁赛：<input id="edit-user-dialog-banned" type="checkbox" /><br>
         <button type="button" onclick="confirmEditUser()" class="primary">确定</button>
         <button type="button" onclick="editUserDialog.open = false">取消</button>
     </dialog>
     <dialog id="edit-const-dialog">
         <h1>编辑常数</h1>
         <div style="text-align: right;">
-            获取奖励的爱心最低要求（未满足的用户所在行将显示为灰色，设为 -1 禁用此功能）：<input id="edit-const-dialog-minimum-heart" type="text" /><br />
-            绿宝石奖励总数（满足条件的用户将获得至少 1 绿宝石，剩余绿宝石按爱心比例分配）：<input id="edit-const-dialog-emerald-amount"
-                type="text" /><br />
+            获取奖励的爱心最低要求（未满足的用户所在行将显示为灰色，设为 -1 禁用此功能）：<input id="edit-const-dialog-minimum-heart" type="text" /><br>
+            绿宝石奖励总数（满足条件的用户将获得至少 1 绿宝石，剩余绿宝石按爱心比例分配）：<input id="edit-const-dialog-emerald-amount" type="text" /><br>
             本轮活动截止日期（到达该天零点后自动停止计数，请及时将排名图片保存到本地）：<input id="edit-const-dialog-enddate" type="text"
-                placeholder="yyyy-mm-dd" /><br />
+                placeholder="yyyy-mm-dd" /><br>
             图片底部时间戳伪造（留空则使用真实时间）：<input id="edit-const-dialog-timestamp" type="text"
-                placeholder="更新于 yyyy年mm月dd日 hh:mm" /><br />
-            每两轮统计之间的最短间隔时间（单位：毫秒。无法更改）：<input id="edit-const-dialog-interval" type="text" readonly /><br />
-            每统计两名用户的最短间隔时间（单位：毫秒。无法更改）：<input id="edit-const-dialog-sleep" type="text" readonly /><br />
+                placeholder="更新于 yyyy年mm月dd日 hh:mm" /><br>
+            每两轮统计之间的最短间隔时间（单位：毫秒。无法更改）：<input id="edit-const-dialog-interval" type="text" readonly /><br>
+            每统计两名用户的最短间隔时间（单位：毫秒。无法更改）：<input id="edit-const-dialog-sleep" type="text" readonly /><br>
         </div>
         <button type="button" onclick="confirmEditConst()" class="primary">确定</button>
         <button type="button" onclick="editConstDialog.open = false">取消</button>
     </dialog>
     <dialog id="edit-history-dialog">
         <h1>编辑历史</h1>
-        <textarea id="edit-history-dialog-text"></textarea><br />
+        <textarea id="edit-history-dialog-text"></textarea><br>
         <button type="button" onclick="confirmEditHistory()" class="primary">确定</button>
         <button type="button" onclick="editHistoryDialog.open = false">取消</button>
     </dialog>
@@ -198,16 +207,17 @@
         <h1>管理</h1>
         <div id="logged-out">
             <p>您需要登录才能进行管理…</p>
-            <input id="password" type="password" placeholder="密码" /><br />
-            <input id="to-save-password" type="checkbox" />记住密码<br />
+            <input id="password" type="password" placeholder="密码" /><br>
+            <input id="to-save-password" type="checkbox" />记住密码<br>
             <button type="button" onclick="login()" class="primary">登录</button>
         </div>
         <div id="logged-in" style="display: none;">
             <p>欢迎您，问答大区版主，<a href="#" onclick="logout()">点此登出</a>。</p>
             <button type="button" onclick="editConst()" class="primary">编辑常数</button>
             <button type="button" onclick="editHistory()" class="primary">编辑历史</button>
-            <button type="button" onclick="toggleShowingRankImage()" class="warning">切换统计表显示状态</button><br />
+            <button type="button" onclick="toggleShowingRankImage()" class="warning">切换统计表显示状态</button><br>
             <button type="button" onclick="addUser()" class="primary">添加用户</button>
+            <button type="button" onclick="batchAddUser()" class="primary">批量添加用户</button>
             <table id="users">
                 <tr>
                     <th onclick="sortTable(0)">UID</th>
@@ -234,7 +244,7 @@
         <pre id="increase-image-bbcode">加载中…</pre>
         <hr />
         <h2>苟利国家生死以，岂因祸福避趋之</h2>
-        MCBBS: <a href="http://www.mcbbs.net/?2444378" target="_blank">@SPGoding</a><br />
+        MCBBS: <a href="http://www.mcbbs.net/?2444378" target="_blank">@SPGoding</a><br>
         GitHub: <a href="https://github.com/SPGoding/mcbbs-qanda-console" target="_blank">mcbbs-qanda-console</a>
     </div>
     <script>
@@ -271,6 +281,8 @@
         const addUserDialog = document.getElementById('add-user-dialog')
         const addUserDialogUid = document.getElementById('add-user-dialog-uid')
         const addUserDialogHeartInitial = document.getElementById('add-user-dialog-heart-initial')
+        const batchAddUserDialog = document.getElementById('batch-add-user-dialog')
+        const batchAddUserDialogUid = document.getElementById('batch-add-user-dialog-uid')
         const editUserDialog = document.getElementById('edit-user-dialog')
         const editUserDialogTitle = document.getElementById('edit-user-dialog-title')
         const editUserDialogUid = document.getElementById('edit-user-dialog-uid')
@@ -425,6 +437,11 @@
             addUserDialog.open = true
         }
 
+        function batchAddUser() {
+            batchAddUserDialogUid.value = ''
+            batchAddUserDialog.open = true
+        }
+
         async function confirmAddUser() {
             let result
             if (addUserDialogHeartInitial.value !== '') {
@@ -438,6 +455,27 @@
                 addUserDialog.open = false
             } else {
                 alert('添加用户时出现错误，请检查 UID 是否正确等')
+            }
+        }
+
+        async function confirmBatchAddUser() {
+            const uids = batchAddUserDialogUid.value.match(/(?<=UID\s*[:：]\s*)\d+/ig).map(Number)
+            const isConfirmed = confirm(`您将添加以下共 ${uids.length} 个用户：\nUID: ${uids.join('\nUID: ')}\n确定继续吗？`)
+            if (isConfirmed) {
+                const errorUids = []
+                const promises = uids.map(async uid => {
+                    const result = await request('POST', api.addUser, `password=${password.value}&uid=${uid}`)
+                    if (result !== 'S') {
+                        errorUids.push(uid)
+                    }
+                })
+                await Promise.all(promises)
+                await updateAll()
+                if (errorUids.length > 0) {
+                    alert(`批量添加以下 UID 时出现错误，请检查 UID 是否正确、网络环境是否良好等：\nUID: ${errorUids.join('\nUID: ')}`)
+                } else {
+                    batchAddUserDialog.open = false
+                }
             }
         }
 
