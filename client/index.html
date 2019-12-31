@@ -163,8 +163,8 @@
         <h1>批量添加用户</h1>
         <div style="text-align: left;">
             网页内容：<br>
-            <textarea id="batch-add-user-dialog-uid" type="text"
-                placeholder="请复制粘贴整页内容（注意别把一楼的示例丢进来）" rows="16" cols="64"></textarea><br>
+            <textarea id="batch-add-user-dialog-uid" type="text" placeholder="请复制粘贴整页内容（注意别把一楼的示例丢进来）" rows="16"
+                cols="64"></textarea><br>
         </div>
         <button type="button" onclick="confirmBatchAddUser()" class="primary">添加</button>
         <button type="button" onclick="batchAddUserDialog.open = false">取消</button>
@@ -215,9 +215,10 @@
             <p>欢迎您，问答大区版主，<a href="#" onclick="logout()">点此登出</a>。</p>
             <button type="button" onclick="editConst()" class="primary">编辑常数</button>
             <button type="button" onclick="editHistory()" class="primary">编辑历史</button>
-            <button type="button" onclick="toggleShowingRankImage()" class="warning">切换统计表显示状态</button><br>
+            <button type="button" onclick="toggleShowingRankImage()" class="primary">切换统计表显示状态</button><br>
             <button type="button" onclick="addUser()" class="primary">添加用户</button>
             <button type="button" onclick="batchAddUser()" class="primary">批量添加用户</button>
+            <button type="button" onclick="delAllUsers()" class="warning">清空比赛列表</button>
             <table id="users">
                 <tr>
                     <th onclick="sortTable(0)">UID</th>
@@ -239,11 +240,11 @@
         <img id="rank-image" />
         <pre id="rank-image-bbcode">加载中…</pre>
         <hr />
-        <h2>今日爱心增量条形统计图</h2>
+        <!-- <h2>今日爱心增量条形统计图</h2>
         <img id="increase-image" />
         <pre id="increase-image-bbcode">加载中…</pre>
-        <hr />
-        <h2>苟利国家生死以，岂因祸福避趋之</h2>
+        <hr /> -->
+        <h2>力微任重久神疲，再竭衰庸定不支</h2>
         MCBBS: <a href="http://www.mcbbs.net/?2444378" target="_blank">@SPGoding</a><br>
         GitHub: <a href="https://github.com/SPGoding/mcbbs-qanda-console" target="_blank">mcbbs-qanda-console</a>
     </div>
@@ -259,6 +260,7 @@
             login: 'api/login',
             addUser: 'api/add-user',
             editUser: 'api/edit-user',
+            delAllUsers: 'api/del-all-users',
             delUser: 'api/del-user',
             toggleShowingRankImage: 'api/toggle-showing-rank-image',
             editConsts: 'api/edit-consts',
@@ -273,8 +275,8 @@
         const loggedIn = document.getElementById('logged-in')
         const rankImage = document.getElementById('rank-image')
         const rankImageBBCode = document.getElementById('rank-image-bbcode')
-        const increaseImage = document.getElementById('increase-image')
-        const increaseImageBBCode = document.getElementById('increase-image-bbcode')
+        // const increaseImage = document.getElementById('increase-image')
+        // const increaseImageBBCode = document.getElementById('increase-image-bbcode')
         const password = document.getElementById('password')
         const toSavePassword = document.getElementById('to-save-password')
         const counter = document.getElementById('counter')
@@ -305,7 +307,7 @@
 
         // Set BBCodes
         rankImageBBCode.innerHTML = `[img=550,340]${url}/${api.getRankImage}[/img]`
-        increaseImageBBCode.innerHTML = `[img=400,432]${url}/${api.getIncreaseImage}[/img]`
+        // increaseImageBBCode.innerHTML = `[img=400,432]${url}/${api.getIncreaseImage}[/img]`
 
         // Auto login
         {
@@ -352,7 +354,7 @@
         setInterval(updateAll, 60000, false)
         async function updateAll(updateAll = true) {
             rankImage.src = `${url}/${api.getRankImage}?t=${new Date().getTime()}`
-            increaseImage.src = `${url}/${api.getIncreaseImage}?t=${new Date().getTime()}`
+            // increaseImage.src = `${url}/${api.getIncreaseImage}?t=${new Date().getTime()}`
             await updateCounter()
             await getUsers()
             if (updateAll) {
@@ -403,7 +405,7 @@
                 banned.innerHTML = user.banned ? '是' : '否'
                 operations.innerHTML =
                     `<button type="button" onclick="editUser(${user.uid})" class="primary small">編輯</button>
-<button type="button" onclick="delUser(${user.uid})" class="warning small">删除</button>`
+<button type="button" onclick="delUser(${user.uid}, '${user.username}')" class="warning small">删除</button>`
             }
         }
 
@@ -530,9 +532,20 @@
             }
         }
 
-        async function delUser(uid) {
-            await request('POST', api.delUser, `password=${password.value}&uid=${uid}`)
-            await updateAll()
+        async function delUser(uid, username) {
+            const isConfirmed = confirm(`您确定要从比赛列表中删除用户「${username}」（UID：${uid}）吗？本操作不可恢复。`)
+            if (isConfirmed) {
+                await request('POST', api.delUser, `password=${password.value}&uid=${uid}`)
+                await updateAll()
+            }
+        }
+
+        async function delAllUsers(uid, username) {
+            const isConfirmed = confirm(`您确定要清空比赛列表吗？本操作不可恢复。`)
+            if (isConfirmed) {
+                await request('POST', api.delAllUsers, `password=${password.value}`)
+                await updateAll()
+            }
         }
 
         async function request(method, api, message) {

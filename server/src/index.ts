@@ -7,7 +7,7 @@ import * as path from 'path'
 import * as qs from 'querystring'
 import * as read from 'read'
 import * as rp from 'request-promise-native'
-import { Canvas, loadImage } from 'canvas'
+import { Canvas } from 'canvas'
 import {
     History, Users, loadConfig, Config, RankElement, getUserViaWebCode, writeConfig,
     getBBCodeOfTable, Table, Row, sleep, drawBar, Counter, Logger, logger
@@ -51,10 +51,10 @@ async function requestListener(req: http.IncomingMessage, res: http.ServerRespon
             await writeConfig('counter.json', counter)
             res.writeHead(200, { 'Content-Type': 'image/svg+xml; charset=utf-8' })
             res.end(rankTable)
-        } else if (req.url && req.url.split('?')[0] === '/api/get-increase-image') {
-            res.writeHead(200, { 'Content-Type': 'image/png' })
-            res.end(increaseImage)
-        } else if (req.url === '/api/get-registration-bbcode') {
+        } /* else if (req.url && req.url.split('?')[0] === '/api/get-increase-image') {
+        //     res.writeHead(200, { 'Content-Type': 'image/png' })
+        //     res.end(increaseImage)
+        } */ else if (req.url === '/api/get-registration-bbcode') {
             res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' })
             res.end(registrationBBCode)
         } else if (req.url === '/api/get-users') {
@@ -90,7 +90,7 @@ async function requestListener(req: http.IncomingMessage, res: http.ServerRespon
             res.end(content)
         }
     } else if (req.method === 'POST') {
-        if (req.url !== '/api/add-user' && req.url !== '/api/del-user' && req.url !== '/api/edit-user'
+        if (req.url !== '/api/add-user' && req.url !== '/api/del-all-users' && req.url !== '/api/del-user' && req.url !== '/api/edit-user'
             && req.url !== '/api/login' && req.url !== '/api/toggle-showing-rank-image'
             && req.url !== '/api/edit-consts' && req.url !== '/api/edit-history') {
             res.writeHead(404, 'Resource Not Found', { 'Content-Type': 'text/html' })
@@ -123,6 +123,21 @@ async function requestListener(req: http.IncomingMessage, res: http.ServerRespon
                 res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' })
                 res.end(getHtmlFromCode(400))
             }
+        } else if (req.url === '/api/del-all-users') {
+            const data = await handlePost(req, res)
+            if (!data.password || md5(data.password.toString()) !== config.password) {
+                logger.warn(`Wrong password from ${ip}.`)
+                res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' })
+                res.end(getHtmlFromCode(400))
+                return
+            }
+            for (const uid in users) {
+                if (users.hasOwnProperty(uid)) {
+                    delUser(Number(uid))
+                }
+            }
+            res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' })
+            res.end('S')
         } else if (req.url === '/api/del-user') {
             const data = await handlePost(req, res)
             if (!data.password || md5(data.password.toString()) !== config.password) {
