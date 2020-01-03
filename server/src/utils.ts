@@ -31,7 +31,8 @@ export interface Users {
 
 export interface RankElement {
     uid: number,
-    heart: number
+    heart: number,
+    lastChanged: number
 }
 
 export interface History {

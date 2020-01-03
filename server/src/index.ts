@@ -417,10 +417,10 @@ function sortRank() {
     for (const uid in users) {
         const user = users[uid]
         if (!user.banned) {
-            rank.push({ uid: parseInt(uid), heart: user.heartAttained })
+            rank.push({ uid: parseInt(uid), heart: user.heartAttained, lastChanged: user.lastChanged })
         }
     }
-    rank.sort((a: RankElement, b: RankElement) => b.heart - a.heart)
+    rank.sort((a: RankElement, b: RankElement) => a.heart === b.heart ? a.lastChanged - b.lastChanged : b.heart - a.heart)
 }
 
 function getTime(toMinutes = true) {
