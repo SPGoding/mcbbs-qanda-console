@@ -7,10 +7,9 @@ import * as path from 'path'
 import * as qs from 'querystring'
 import * as read from 'read'
 import * as rp from 'request-promise-native'
-import { Canvas } from 'canvas'
 import {
     History, Users, loadConfig, Config, RankElement, getUserViaWebCode, writeConfig,
-    getBBCodeOfTable, Table, Row, sleep, drawBar, Counter, Logger, logger
+    getBBCodeOfTable, Table, Row, sleep, Counter, logger
 } from './utils'
 
 let config: Config = {
@@ -26,7 +25,7 @@ let counter: Counter = {}
 let rankTable: string
 let updateTimeInfo = ''
 let registrationBBCode = ''
-let increaseImage: Buffer
+// let increaseImage: Buffer
 
 let fakeUpdateTimeInfo = ''
 
@@ -390,7 +389,7 @@ async function updateInfo(toUpdateUserInfo = true) {
     writeConfig('history.json', history)
     if (!freeze) {
         rankTable = getRankTable()
-        increaseImage = await drawIncreaseImage()
+        // increaseImage = await drawIncreaseImage()
         registrationBBCode = getRegistrationBBCode()
     }
     writeConfig('users.json', users)
@@ -403,7 +402,7 @@ async function updateUserInfo() {
             if (!user.banned) {
                 const url = `http://www.mcbbs.net/?${uid}`
                 const webCode: string = await rp(url)
-                const userUpdated = getUserViaWebCode(webCode, user)
+                const userUpdated = getUserViaWebCode(webCode, Number(uid), user)
                 users[uid] = userUpdated
                 await sleep(config.sleep)
             }
@@ -560,68 +559,68 @@ div.time {
     return `${prefix}${body}${suffix}`
 }
 
-async function drawIncreaseImage() {
-    const colors = [
-        '#48b2bf',
-        '#bf4847',
-        '#5448bf',
-        '#48bf91',
-        '#b3bf48',
-        '#9048bf',
-        '#bf5448',
-        '#77bf48',
-        '#4877bf',
-        '#bf9048'
-    ]
-    const fontHeight = 16
-    const canvas = new Canvas(400, 432)
-    const ctx = canvas.getContext('2d') as CanvasRenderingContext2D
-    const barMaxHeight = canvas.height - fontHeight * 4.5
-    const barWidth = canvas.width / 10
-    const data = rank.map(v => {
-        return { username: users[v.uid].username, delta: v.heart - history[getTime(false)][v.uid] }
-    })
-    ctx.font = `${fontHeight}px Microsoft Yahei`
-    let deltaMax = 0
-    for (const { delta } of data) {
-        deltaMax = Math.max(deltaMax, delta)
-    }
-    let i = 0
-    for (const { username, delta } of data) {
-        if (i >= 10) {
-            break
-        }
-        // Drawing bars
-        const barHeight = barMaxHeight * delta / deltaMax
-        ctx.fillStyle = colors[i]
-        drawBar(ctx, i * barWidth, barMaxHeight - barHeight + fontHeight * 1.5, barWidth, barHeight, colors[i])
-        const yMax = barMaxHeight + fontHeight * 1.3
-        const y = barMaxHeight - barHeight + fontHeight * 1.3
-        ctx.fillText(delta.toString(),
-            i * barWidth + barWidth / 2 - ctx.measureText(delta.toString()).width / 2,
-            y > yMax ? yMax : y)
-        let un = username.slice(0, 4)
-        while (ctx.measureText(un).width > barWidth) {
-            un = un.slice(0, -1)
-        }
+// async function drawIncreaseImage() {
+//     const colors = [
+//         '#48b2bf',
+//         '#bf4847',
+//         '#5448bf',
+//         '#48bf91',
+//         '#b3bf48',
+//         '#9048bf',
+//         '#bf5448',
+//         '#77bf48',
+//         '#4877bf',
+//         '#bf9048'
+//     ]
+//     const fontHeight = 16
+//     const canvas = new Canvas(400, 432)
+//     const ctx = canvas.getContext('2d') as CanvasRenderingContext2D
+//     const barMaxHeight = canvas.height - fontHeight * 4.5
+//     const barWidth = canvas.width / 10
+//     const data = rank.map(v => {
+//         return { username: users[v.uid].username, delta: v.heart - history[getTime(false)][v.uid] }
+//     })
+//     ctx.font = `${fontHeight}px Microsoft Yahei`
+//     let deltaMax = 0
+//     for (const { delta } of data) {
+//         deltaMax = Math.max(deltaMax, delta)
+//     }
+//     let i = 0
+//     for (const { username, delta } of data) {
+//         if (i >= 10) {
+//             break
+//         }
+//         // Drawing bars
+//         const barHeight = barMaxHeight * delta / deltaMax
+//         ctx.fillStyle = colors[i]
+//         drawBar(ctx, i * barWidth, barMaxHeight - barHeight + fontHeight * 1.5, barWidth, barHeight, colors[i])
+//         const yMax = barMaxHeight + fontHeight * 1.3
+//         const y = barMaxHeight - barHeight + fontHeight * 1.3
+//         ctx.fillText(delta.toString(),
+//             i * barWidth + barWidth / 2 - ctx.measureText(delta.toString()).width / 2,
+//             y > yMax ? yMax : y)
+//         let un = username.slice(0, 4)
+//         while (ctx.measureText(un).width > barWidth) {
+//             un = un.slice(0, -1)
+//         }
 
-        // Special case for 爱心大魔王
-        if (username === '爱心大魔王') {
-            un = '魔王'
-        }
+//         // Special case for 爱心大魔王
+//         if (username === '爱心大魔王') {
+//             un = '魔王'
+//         }
 
-        ctx.fillStyle = '#000000'
-        ctx.fillText(un, i * barWidth + barWidth / 2 - ctx.measureText(un).width / 2,
-            canvas.height - fontHeight * 2)
-        i++
-    }
-    ctx.fillStyle = '#81157d'
-    ctx.fillText(getTime(false),
-        (canvas.width - ctx.measureText(getTime(false)).width) / 2,
-        canvas.height - fontHeight * 0.5)
+//         ctx.fillStyle = '#000000'
+//         ctx.fillText(un, i * barWidth + barWidth / 2 - ctx.measureText(un).width / 2,
+//             canvas.height - fontHeight * 2)
+//         i++
+//     }
+//     ctx.fillStyle = '#81157d'
+//     ctx.fillText(getTime(false),
+//         (canvas.width - ctx.measureText(getTime(false)).width) / 2,
+//         canvas.height - fontHeight * 0.5)
 
-    return canvas.toBuffer('image/png')
-}
+//     return canvas.toBuffer('image/png')
+// }
 
 function getRegistrationBBCode() {
     const table: Table = []
@@ -649,7 +648,7 @@ async function addUser(uid: number, heartInitial?: number) {
     try {
         const url = `http://www.mcbbs.net/?${uid}`
         const webCode: string = await rp(url)
-        const user = getUserViaWebCode(webCode)
+        const user = getUserViaWebCode(webCode, uid)
 
         if (heartInitial !== undefined) {
             user.heartInitial = heartInitial

@@ -21,7 +21,8 @@ export interface User {
     heartAbandoned: number,
     heartPresent: number,
     heartAttained: number,
-    banned: boolean
+    banned: boolean,
+    lastChanged: number
 }
 
 export interface Users {
@@ -148,17 +149,10 @@ export class Logger {
 
 export const logger = new Logger()
 
-export function getUserViaWebCode(webCode: string, oldUser?: User): User {
+export function getUserViaWebCode(webCode: string, uid: number, oldUser?: User): User {
     try {
         const username = getStringBetweenStrings(webCode, '<title>', '的个人资料 -  Minecraft(我的世界)中文论坛 - </title>')
         const heartPresent = parseInt(getStringBetweenStrings(webCode, '<li><em>爱心</em>', ' 心</li>'))
-
-        if (oldUser) {
-            const { username: oldUsername } = oldUser
-            if (oldUsername !== username) {
-                logger.info('User', `'${oldUsername}' changed zis name to '${username}'.`)
-            }
-        }
 
         if (!oldUser) {
             oldUser = {
@@ -167,20 +161,30 @@ export function getUserViaWebCode(webCode: string, oldUser?: User): User {
                 heartInitial: heartPresent,
                 heartAttained: NaN, // Won't be inherited.
                 heartPresent: NaN, // Won't be inherited.
+                lastChanged: NaN, // Won't be inherited.
                 username: '' // Won't be inherited.
             }
         }
 
-        const { banned: banned, heartAbandoned: heartAbandoned, heartInitial: heartInitial } = oldUser
-
-        return {
-            username: username,
-            heartInitial: heartInitial,
-            heartAbandoned: heartAbandoned,
+        const ans = {
+            ...oldUser,
             heartPresent: heartPresent,
-            heartAttained: heartPresent - heartInitial - heartAbandoned,
-            banned: banned
+            heartAttained: heartPresent - oldUser.heartInitial - oldUser.heartAbandoned,
+            lastChanged: new Date().getTime(),
+            username: username
         }
+
+        if (
+            oldUser.username !== ans.username ||
+            oldUser.heartAttained !== ans.heartAttained ||
+            oldUser.heartPresent !== ans.heartPresent ||
+            oldUser.lastChanged !== ans.lastChanged
+        ) {
+            logger.info('User', `- ${uid}: ${JSON.stringify(oldUser)}.`)
+            logger.info('User', `+ ${uid}: ${JSON.stringify(ans)}.`)
+        }
+
+        return ans
     } catch {
         throw 'Invalid user page.'
     }
@@ -212,10 +216,10 @@ export function sleep(ms: number) {
     })
 }
 
-export function drawBar(ctx: CanvasRenderingContext2D, upperLeftCornerX: number,
-    upperLeftCornerY: number, width: number, height: number, color: string | CanvasGradient | CanvasPattern) {
-    ctx.save()
-    ctx.fillStyle = color
-    ctx.fillRect(upperLeftCornerX, upperLeftCornerY, width, height)
-    ctx.restore()
-}
+// export function drawBar(ctx: CanvasRenderingContext2D, upperLeftCornerX: number,
+//     upperLeftCornerY: number, width: number, height: number, color: string | CanvasGradient | CanvasPattern) {
+//     ctx.save()
+//     ctx.fillStyle = color
+//     ctx.fillRect(upperLeftCornerX, upperLeftCornerY, width, height)
+//     ctx.restore()
+// }
