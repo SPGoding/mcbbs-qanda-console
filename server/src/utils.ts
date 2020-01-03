@@ -161,7 +161,7 @@ export function getUserViaWebCode(webCode: string, uid: number, oldUser?: User):
                 heartInitial: heartPresent,
                 heartAttained: NaN, // Won't be inherited.
                 heartPresent: NaN, // Won't be inherited.
-                lastChanged: NaN, // Won't be inherited.
+                lastChanged: new Date().getTime(),
                 username: '' // Won't be inherited.
             }
         }
@@ -170,16 +170,15 @@ export function getUserViaWebCode(webCode: string, uid: number, oldUser?: User):
             ...oldUser,
             heartPresent: heartPresent,
             heartAttained: heartPresent - oldUser.heartInitial - oldUser.heartAbandoned,
-            lastChanged: new Date().getTime(),
             username: username
         }
 
         if (
             oldUser.username !== ans.username ||
             oldUser.heartAttained !== ans.heartAttained ||
-            oldUser.heartPresent !== ans.heartPresent ||
-            oldUser.lastChanged !== ans.lastChanged
+            oldUser.heartPresent !== ans.heartPresent
         ) {
+            ans.lastChanged = new Date().getTime()
             logger.info('User', `- ${uid}: ${JSON.stringify(oldUser)}.`)
             logger.info('User', `+ ${uid}: ${JSON.stringify(ans)}.`)
         }
