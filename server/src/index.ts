@@ -9,7 +9,7 @@ import * as read from 'read'
 import * as rp from 'request-promise-native'
 import {
     History, Users, loadConfig, Config, RankElement, getUserViaWebCode, writeConfig,
-    getBBCodeOfTable, Table, Row, sleep, Counter, logger
+    getBBCodeOfTable, Table, Row, sleep, Counter, logger, getDifference
 } from './utils'
 
 let config: Config = {
@@ -550,7 +550,7 @@ div.time {
             rows.push(`${rowPrefix}${cellPrefix}${row.join(`${cellSuffix}${cellPrefix}`)}${cellSuffix}${rowSuffix}`)
         }
         const tableHtml = rows.join('')
-        
+
         // Get time HTML.
         const timeHtml = `<div class="time">${fakeUpdateTimeInfo || updateTimeInfo}</div>`
 
@@ -558,69 +558,6 @@ div.time {
     }
     return `${prefix}${body}${suffix}`
 }
-
-// async function drawIncreaseImage() {
-//     const colors = [
-//         '#48b2bf',
-//         '#bf4847',
-//         '#5448bf',
-//         '#48bf91',
-//         '#b3bf48',
-//         '#9048bf',
-//         '#bf5448',
-//         '#77bf48',
-//         '#4877bf',
-//         '#bf9048'
-//     ]
-//     const fontHeight = 16
-//     const canvas = new Canvas(400, 432)
-//     const ctx = canvas.getContext('2d') as CanvasRenderingContext2D
-//     const barMaxHeight = canvas.height - fontHeight * 4.5
-//     const barWidth = canvas.width / 10
-//     const data = rank.map(v => {
-//         return { username: users[v.uid].username, delta: v.heart - history[getTime(false)][v.uid] }
-//     })
-//     ctx.font = `${fontHeight}px Microsoft Yahei`
-//     let deltaMax = 0
-//     for (const { delta } of data) {
-//         deltaMax = Math.max(deltaMax, delta)
-//     }
-//     let i = 0
-//     for (const { username, delta } of data) {
-//         if (i >= 10) {
-//             break
-//         }
-//         // Drawing bars
-//         const barHeight = barMaxHeight * delta / deltaMax
-//         ctx.fillStyle = colors[i]
-//         drawBar(ctx, i * barWidth, barMaxHeight - barHeight + fontHeight * 1.5, barWidth, barHeight, colors[i])
-//         const yMax = barMaxHeight + fontHeight * 1.3
-//         const y = barMaxHeight - barHeight + fontHeight * 1.3
-//         ctx.fillText(delta.toString(),
-//             i * barWidth + barWidth / 2 - ctx.measureText(delta.toString()).width / 2,
-//             y > yMax ? yMax : y)
-//         let un = username.slice(0, 4)
-//         while (ctx.measureText(un).width > barWidth) {
-//             un = un.slice(0, -1)
-//         }
-
-//         // Special case for 爱心大魔王
-//         if (username === '爱心大魔王') {
-//             un = '魔王'
-//         }
-
-//         ctx.fillStyle = '#000000'
-//         ctx.fillText(un, i * barWidth + barWidth / 2 - ctx.measureText(un).width / 2,
-//             canvas.height - fontHeight * 2)
-//         i++
-//     }
-//     ctx.fillStyle = '#81157d'
-//     ctx.fillText(getTime(false),
-//         (canvas.width - ctx.measureText(getTime(false)).width) / 2,
-//         canvas.height - fontHeight * 0.5)
-
-//     return canvas.toBuffer('image/png')
-// }
 
 function getRegistrationBBCode() {
     const table: Table = []
@@ -675,11 +612,13 @@ function delUser(uid: number) {
 function editUser(uid: number, heartInitial: number,
     heartAbandoned: number, banned: boolean) {
     const user = users[uid]
-    logger.info('User', `- ${uid}: ${JSON.stringify(user)}.`)
+    const oldUser = JSON.parse(JSON.stringify(user))
     user.heartInitial = heartInitial
     user.heartAbandoned = heartAbandoned
     user.banned = banned
     user.heartAttained = user.heartPresent - user.heartInitial - user.heartAbandoned
-    logger.info('User', `+ ${uid}: ${JSON.stringify(user)}.`)
+    const { diffBefore, diffAfter } = getDifference(oldUser, user)
+    logger.info('User', `- ${uid}: ${JSON.stringify(diffBefore)}.`)
+    logger.info('User', `+ ${uid}: ${JSON.stringify(diffAfter)}.`)
     updateInfo(false)
 }

@@ -180,8 +180,9 @@ export function getUserViaWebCode(webCode: string, uid: number, oldUser?: User):
             oldUser.heartPresent !== ans.heartPresent
         ) {
             ans.lastChanged = new Date().getTime()
-            logger.info('User', `- ${uid}: ${JSON.stringify(oldUser)}.`)
-            logger.info('User', `+ ${uid}: ${JSON.stringify(ans)}.`)
+            const { diffBefore, diffAfter } = getDifference(oldUser, ans)
+            logger.info('User', `- ${uid}: ${JSON.stringify(diffBefore)}.`)
+            logger.info('User', `+ ${uid}: ${JSON.stringify(diffAfter)}.`)
         }
 
         return ans
@@ -216,10 +217,15 @@ export function sleep(ms: number) {
     })
 }
 
-// export function drawBar(ctx: CanvasRenderingContext2D, upperLeftCornerX: number,
-//     upperLeftCornerY: number, width: number, height: number, color: string | CanvasGradient | CanvasPattern) {
-//     ctx.save()
-//     ctx.fillStyle = color
-//     ctx.fillRect(upperLeftCornerX, upperLeftCornerY, width, height)
-//     ctx.restore()
-// }
+export function getDifference<T extends object, U extends T>(before: T, after: T): { diffBefore: U, diffAfter: U } {
+    const ans= { diffBefore: {}, diffAfter: {} } as any
+    for (const key in before) {
+        if (before.hasOwnProperty(key)) {
+            if (before[key] !== after[key]) {
+                ans.diffBefore[key] = before[key]
+                ans.diffAfter[key] = after[key]
+            }
+        }
+    }
+    return ans
+}
