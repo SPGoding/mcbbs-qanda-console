@@ -15,6 +15,7 @@ import {
 let config: Config = {
     password: '', interval: NaN, port: NaN, host: '', protocol: 'http',
     minimumHeart: NaN, emeraldAmount: NaN, sleep: NaN,
+    // welfareAmount: NaN, welfareEmeraldPerUser: NaN, welfareMinimumHeart: NaN,
     endDate: ''
 }
 let users: Users = {}
@@ -185,7 +186,7 @@ async function requestListener(req: http.IncomingMessage, res: http.ServerRespon
             const data = await handlePost(req, res)
             if (data.password && md5(data.password.toString()) === config.password) {
                 stopShowingRankTable = !stopShowingRankTable
-                rankTable = getRankTable()
+                rankTable = getRankTableSvg()
                 res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' })
                 res.end('S')
             } else {
@@ -211,7 +212,7 @@ async function requestListener(req: http.IncomingMessage, res: http.ServerRespon
                     config.endDate = commingEndDate
                     fakeUpdateTimeInfo = commingTimestamp
                     await writeConfig<Config>('config.json', config)
-                    rankTable = getRankTable()
+                    rankTable = getRankTableSvg()
                     res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' })
                     res.end('S')
                 } else {
@@ -251,7 +252,8 @@ async function startup() {
         config = await loadConfig<Config>('config.json',
             {
                 password: '', sleep: 500, interval: 600000, port: 80, host: '',
-                protocol: 'http', minimumHeart: 30, emeraldAmount: 100,
+                protocol: 'http', minimumHeart: 10, emeraldAmount: 30,
+                // welfareAmount: 30, welfareEmeraldPerUser: 1, welfareMinimumHeart: 10,
                 endDate: '1970-01-01'
             })
         users = await loadConfig<Users>('users.json', {})
@@ -380,6 +382,14 @@ async function updateInfo(toUpdateUserInfo = true) {
     rank.forEach(v => {
         const day = getTime(false)
         if (history[day] === undefined) {
+            // The first fetch of `day`.
+            logger
+                .info('RANK', `=== ${day} 00:00 ===`)
+                .indent()
+            for (const row of getRankTable()) {
+                logger.info('RANK', '| ' + row.join(' | ') + ' |')
+            }
+            logger.indent(-1)
             history[day] = {}
         }
         if (history[day][v.uid] === undefined) {
@@ -388,7 +398,7 @@ async function updateInfo(toUpdateUserInfo = true) {
     })
     writeConfig('history.json', history)
     if (!freeze) {
-        rankTable = getRankTable()
+        rankTable = getRankTableSvg()
         // increaseImage = await drawIncreaseImage()
         registrationBBCode = getRegistrationBBCode()
     }
@@ -443,6 +453,34 @@ function getTime(toMinutes = true) {
 }
 
 function getRankTable() {
+    const table: Table = [
+        ['名次', '用户名', '已获爱心', '预计绿宝石']
+    ]
+    let topTenEmeraldAmount = config.emeraldAmount
+    let topTenHeartAmount = 0
+    for (const ele of rank.slice(0, 10)) {
+        if (ele.heart >= config.minimumHeart) {
+            topTenEmeraldAmount -= 1
+            topTenHeartAmount += ele.heart
+        }
+    }
+    const emeraldPerHeart = topTenEmeraldAmount / topTenHeartAmount
+
+    for (const ele of rank) {
+        let emeraldCount: number
+        if (rank.indexOf(ele) + 1 > 10) {
+            emeraldCount = 0
+        } else {
+            emeraldCount = ele.heart >= config.minimumHeart ? 1 + Math.round(ele.heart * emeraldPerHeart) : 0
+        }
+        const row = [rank.indexOf(ele) + 1, users[ele.uid].username, ele.heart, emeraldCount]
+        table.push(row)
+    }
+
+    return table
+}
+
+function getRankTableSvg() {
     const width = 550
     const height = 340
     const primaryBackColor = '#fcf1da'
@@ -505,36 +543,8 @@ div.time {
         const tablePrefix = '<table>'
         const tableSuffix = '</table>'
 
-        const table: Table = [
-            ['名次', '用户名', '已获爱心', '预计绿宝石']
-        ]
-        const topTen = rank.slice(0, 10)
-        let emeraldAmount = config.emeraldAmount
-        let heartAmount = 0
-        for (const ele of topTen) {
-            if (ele.heart >= config.minimumHeart) {
-                emeraldAmount -= 1
-                heartAmount += ele.heart
-            }
-        }
-        const emeraldPerHeart = emeraldAmount / heartAmount
+        const table = getRankTable().slice(0, 11)
 
-        // Initialize the table.
-        for (const ele of topTen) {
-            const emeraldCount = ele.heart >= config.minimumHeart ? 1 + Math.round(ele.heart * emeraldPerHeart) : 0
-            const row = [rank.indexOf(ele) + 1, users[ele.uid].username, ele.heart, emeraldCount]
-            table.push(row)
-        }
-        // Deal with draw.
-        for (let i = 0; i < table.length; i++) {
-            const row = table[i]
-            if (i >= 1) {
-                const lastRow = table[i - 1]
-                if (row[2] === lastRow[2]) {
-                    row[0] = lastRow[0]
-                }
-            }
-        }
         // Output table HTML.
         const rows: string[] = []
         for (let i = 0; i < table.length; i++) {

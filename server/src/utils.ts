@@ -11,6 +11,9 @@ export interface Config {
     minimumHeart: number,
     emeraldAmount: number,
     endDate: string,
+    // welfareMinimumHeart: number,
+    // welfareEmeraldPerUser: number,
+    // welfareAmount: number,
     keyFile?: string,
     certFile?: string
 }
