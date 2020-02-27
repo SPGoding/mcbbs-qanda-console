@@ -6,21 +6,16 @@ import * as md5 from 'md5'
 import * as path from 'path'
 import * as qs from 'querystring'
 import * as read from 'read'
-import * as rp from 'request-promise-native'
 import {
-    History, Users, loadConfig, Config, RankElement, getUserViaWebCode, writeConfig,
-    getBBCodeOfTable, Table, Row, sleep, Counter, logger, getDifference
+    History, Users, loadConfig, Config, SortedUser, writeConfig,
+    getBBCodeOfTable, Table, Row, sleep, Counter, logger, getDifference, getUserFromUid, Rank
 } from './utils'
 
-let config: Config = {
-    password: '', interval: NaN, port: NaN, host: '', protocol: 'http',
-    minimumHeart: NaN, emeraldAmount: NaN, sleep: NaN,
-    // welfareAmount: NaN, welfareEmeraldPerUser: NaN, welfareMinimumHeart: NaN,
-    endDate: ''
-}
+let config: Config = { password: '', interval: NaN, sleep: NaN, protocol: 'http', host: '', port: NaN, ranks: [], endDate: '' }
+let ranks: Rank[] = []
 let users: Users = {}
 let history: History = {}
-let rank: RankElement[]
+let sortedUsers: SortedUser[]
 let counter: Counter = {}
 
 let rankTable: string
@@ -51,10 +46,7 @@ async function requestListener(req: http.IncomingMessage, res: http.ServerRespon
             await writeConfig('counter.json', counter)
             res.writeHead(200, { 'Content-Type': 'image/svg+xml; charset=utf-8' })
             res.end(rankTable)
-        } /* else if (req.url && req.url.split('?')[0] === '/api/get-increase-image') {
-        //     res.writeHead(200, { 'Content-Type': 'image/png' })
-        //     res.end(increaseImage)
-        } */ else if (req.url === '/api/get-registration-bbcode') {
+        } else if (req.url === '/api/get-registration-bbcode') {
             res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' })
             res.end(registrationBBCode)
         } else if (req.url === '/api/get-users') {
@@ -63,10 +55,12 @@ async function requestListener(req: http.IncomingMessage, res: http.ServerRespon
         } else if (req.url === '/api/get-history') {
             res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' })
             res.end(JSON.stringify(history))
+        } else if (req.url === '/api/get-ranks') {
+            res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' })
+            res.end(JSON.stringify(ranks))
         } else if (req.url === '/api/get-consts') {
             res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' })
             res.end(JSON.stringify({
-                minimumHeart: config.minimumHeart, emeraldAmount: config.emeraldAmount,
                 endDate: config.endDate,
                 interval: config.interval, sleep: config.sleep,
                 timestamp: fakeUpdateTimeInfo
@@ -90,13 +84,6 @@ async function requestListener(req: http.IncomingMessage, res: http.ServerRespon
             res.end(content)
         }
     } else if (req.method === 'POST') {
-        if (req.url !== '/api/add-user' && req.url !== '/api/del-all-users' && req.url !== '/api/del-user' && req.url !== '/api/edit-user'
-            && req.url !== '/api/login' && req.url !== '/api/toggle-showing-rank-image'
-            && req.url !== '/api/edit-consts' && req.url !== '/api/edit-history') {
-            res.writeHead(404, 'Resource Not Found', { 'Content-Type': 'text/html' })
-            res.end(getHtmlFromCode(404))
-            return
-        }
         if (req.url === '/api/add-user') {
             const data = await handlePost(req, res)
             if (!data.password || md5(data.password.toString()) !== config.password) {
@@ -197,18 +184,12 @@ async function requestListener(req: http.IncomingMessage, res: http.ServerRespon
         } else if (req.url === '/api/edit-consts') {
             const data = await handlePost(req, res)
             if (data.password && md5(data.password.toString()) === config.password) {
-                if (data.minimumHeart && data.emeraldAmount && data.endDate) {
-                    const commingMinimumHeart = parseInt(data.minimumHeart as string)
-                    const commingEmeraldAmount = parseInt(data.emeraldAmount as string)
+                if (data.endDate) {
                     const commingEndDate = data.endDate as string
                     const commingTimestamp = data.timestamp as string
                     logger
-                        .info('Consts', `- ${
-                            config.emeraldAmount}, ${config.minimumHeart}, ${config.endDate}, ${fakeUpdateTimeInfo}.`)
-                        .info('Consts', `+ ${
-                            commingEmeraldAmount}, ${commingMinimumHeart}, ${commingEndDate}, ${commingTimestamp}.`)
-                    config.minimumHeart = commingMinimumHeart
-                    config.emeraldAmount = commingEmeraldAmount
+                        .info('Consts', `- ${config.endDate}, ${fakeUpdateTimeInfo}.`)
+                        .info('Consts', `+ ${commingEndDate}, ${commingTimestamp}.`)
                     config.endDate = commingEndDate
                     fakeUpdateTimeInfo = commingTimestamp
                     await writeConfig<Config>('config.json', config)
@@ -229,20 +210,52 @@ async function requestListener(req: http.IncomingMessage, res: http.ServerRespon
             if (data.password && md5(data.password.toString()) === config.password) {
                 if (data.value) {
                     const commingValue = data.value as string
-                    logger.info('History', `- ${JSON.stringify(history)}.`, `+ ${commingValue}.`)
-                    history = JSON.parse(commingValue)
-                    await writeConfig<History>('history.json', history)
-                    res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' })
-                    res.end('S')
+                    try {
+                        logger.info('History', `- ${JSON.stringify(history)}.`, `+ ${commingValue}.`)
+                        history = JSON.parse(commingValue)
+                        await writeConfig<History>('history.json', history)
+                        res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' })
+                        res.end('S')
+                    } catch (e) {
+                        logger.eror('History', e.toString())
+                        res.end(e.toString())
+                    }
                 } else {
                     res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' })
-                    res.end('Expected constants')
+                    res.end('Expected history')
                 }
             } else {
                 logger.warn(`Wrong password from ${ip}.`)
                 res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' })
                 res.end(getHtmlFromCode(400))
             }
+        } else if (req.url === '/api/edit-ranks') {
+            const data = await handlePost(req, res)
+            if (data.password && md5(data.password.toString()) === config.password) {
+                if (data.value) {
+                    const commingValue = data.value as string
+                    try {
+                        logger.info('Ranks', `- ${JSON.stringify(ranks)}.`, `+ ${commingValue}.`)
+                        ranks = JSON.parse(commingValue)
+                        await writeConfig('ranks.json', ranks)
+                        res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' })
+                        res.end('S')
+                    } catch (e) {
+                        logger.eror('Ranks', e.toString())
+                        res.end(e.toString())
+                    }
+                } else {
+                    res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' })
+                    res.end('Expected ranks')
+                }
+            } else {
+                logger.warn(`Wrong password from ${ip}.`)
+                res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' })
+                res.end(getHtmlFromCode(400))
+            }
+        } else {
+            res.writeHead(404, 'Resource Not Found', { 'Content-Type': 'text/html' })
+            res.end(getHtmlFromCode(404))
         }
     }
 }
@@ -252,13 +265,13 @@ async function startup() {
         config = await loadConfig<Config>('config.json',
             {
                 password: '', sleep: 500, interval: 600000, port: 80, host: '',
-                protocol: 'http', minimumHeart: 10, emeraldAmount: 30,
-                // welfareAmount: 30, welfareEmeraldPerUser: 1, welfareMinimumHeart: 10,
-                endDate: '1970-01-01'
-            })
-        users = await loadConfig<Users>('users.json', {})
-        history = await loadConfig<History>('history.json', {})
-        counter = await loadConfig<Counter>('counter.json', {})
+                protocol: 'http', ranks: [], endDate: '1970-01-01'
+            }
+        )
+        users = await loadConfig('users.json', {})
+        history = await loadConfig('history.json', {})
+        counter = await loadConfig('counter.json', {})
+        ranks = await loadConfig('ranks.json', [])
 
         if (config.password === '') {
             await setPassword()
@@ -379,7 +392,7 @@ async function updateInfo(toUpdateUserInfo = true) {
     if (!lastUpdateTime) {
         lastUpdateTime = new Date()
     }
-    rank.forEach(v => {
+    sortedUsers.forEach(v => {
         const day = getTime(false)
         if (history[day] === undefined) {
             // The first fetch of `day`.
@@ -410,9 +423,7 @@ async function updateUserInfo() {
         for (const uid in users) {
             const user = users[uid]
             if (!user.banned) {
-                const url = `http://www.mcbbs.net/?${uid}`
-                const webCode: string = await rp(url)
-                const userUpdated = getUserViaWebCode(webCode, Number(uid), user)
+                const userUpdated = await getUserFromUid(Number(uid), user)
                 users[uid] = userUpdated
                 await sleep(config.sleep)
             }
@@ -423,14 +434,14 @@ async function updateUserInfo() {
 }
 
 function sortRank() {
-    rank = []
+    sortedUsers = []
     for (const uid in users) {
         const user = users[uid]
         if (!user.banned) {
-            rank.push({ uid: parseInt(uid), heart: user.heartAttained, lastChanged: user.lastChanged })
+            sortedUsers.push({ uid: parseInt(uid), heart: user.heartAttained, lastChanged: user.lastChanged })
         }
     }
-    rank.sort((a: RankElement, b: RankElement) => a.heart === b.heart ? a.lastChanged - b.lastChanged : b.heart - a.heart)
+    sortedUsers.sort((a: SortedUser, b: SortedUser) => a.heart === b.heart ? a.lastChanged - b.lastChanged : b.heart - a.heart)
 }
 
 function getTime(toMinutes = true) {
@@ -454,35 +465,30 @@ function getTime(toMinutes = true) {
 
 function getRankTable() {
     const table: Table = [
-        ['名次', '用户名', '已获爱心', '预计绿宝石']
+        ['段位', '用户名', '已获爱心']
     ]
-    let topTenEmeraldAmount = config.emeraldAmount
-    let topTenHeartAmount = 0
-    for (const ele of rank.slice(0, 10)) {
-        if (ele.heart >= config.minimumHeart) {
-            topTenEmeraldAmount -= 1
-            topTenHeartAmount += ele.heart
+    const remainingRanks: Rank[] = JSON.parse(JSON.stringify(ranks))
+    for (const user of sortedUsers) {
+        for (const rank of remainingRanks) {
+            if (rank.amount > 0 && user.heart > rank.heart) {
+                if (--rank.amount <= 0) {
+                    remainingRanks.splice(remainingRanks.indexOf(rank), 1)
+                }
+                table.push([rank.icon ? `<img src="${rank.icon}" alt="${rank.name}" title="${rank.name}"></img>` : rank.name, users[user.uid].username, user.heart])
+                break
+            } else {
+                // It's impossible for users after this one to meet this rank's requirement.
+                // Therefore, remove this rank.
+                remainingRanks.splice(remainingRanks.indexOf(rank), 1)
+            }
         }
-    }
-    const emeraldPerHeart = topTenEmeraldAmount / topTenHeartAmount
-
-    for (const ele of rank) {
-        let emeraldCount: number
-        if (rank.indexOf(ele) + 1 > 10) {
-            emeraldCount = 0
-        } else {
-            emeraldCount = ele.heart >= config.minimumHeart ? 1 + Math.round(ele.heart * emeraldPerHeart) : 0
-        }
-        const row = [rank.indexOf(ele) + 1, users[ele.uid].username, ele.heart, emeraldCount]
-        table.push(row)
     }
 
     return table
 }
 
 function getRankTableSvg() {
-    const width = 550
-    const height = 340
+    const width = 530
     const primaryBackColor = '#fcf1da'
     const titleBackColor = '#ffbf00'
     const primaryForeColor = '#000000'
@@ -531,11 +537,14 @@ div.time {
     color: ${timeColor};
     text-align: center;
     width: 100%;
-    position: absolute;
-    bottom: 0;
+}
+
+img {
+    max-width: 1em;
+    max-height: 1em;
 }
 </style>`
-    const prefix = `<?xml version='1.0' standalone='no'?><!DOCTYPE svg PUBLIC '-//W3C//DTD SVG 1.1//EN' 'http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd'><svg width='${width}px' height='${height}px' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink'><foreignObject x="0" y="0" width="${width}px" height="${height}px">${css}<body xmlns="http://www.w3.org/1999/xhtml">`
+    const prefix = `<?xml version='1.0' standalone='no'?><!DOCTYPE svg PUBLIC '-//W3C//DTD SVG 1.1//EN' 'http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd'><svg width='${width}px' height='100%' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink'><foreignObject x="0" y="0" width="${width}px" height="100%">${css}<body xmlns="http://www.w3.org/1999/xhtml">`
     const suffix = '</body></foreignObject></svg>'
     let body = '<p>暂停公示</p>'
 
@@ -543,7 +552,7 @@ div.time {
         const tablePrefix = '<table>'
         const tableSuffix = '</table>'
 
-        const table = getRankTable().slice(0, 11)
+        const table = getRankTable()
 
         // Output table HTML.
         const rows: string[] = []
@@ -551,12 +560,8 @@ div.time {
             const row = table[i]
             const rowPrefix = '<tr>'
             const rowSuffix = '</tr>'
-            const cellPrefix = i === 0 ?
-                '<th>' :
-                `<td${row[2] >= config.minimumHeart ? '' : ' class="gray"'}>`
-            const cellSuffix = i === 0 ?
-                '</th>' :
-                '</td>'
+            const cellPrefix = i === 0 ? '<th>' : `<td>`
+            const cellSuffix = i === 0 ? '</th>' : '</td>'
             rows.push(`${rowPrefix}${cellPrefix}${row.join(`${cellSuffix}${cellPrefix}`)}${cellSuffix}${rowSuffix}`)
         }
         const tableHtml = rows.join('')
@@ -593,9 +598,7 @@ function getRegistrationBBCode() {
 
 async function addUser(uid: number, heartInitial?: number) {
     try {
-        const url = `http://www.mcbbs.net/?${uid}`
-        const webCode: string = await rp(url)
-        const user = getUserViaWebCode(webCode, uid)
+        const user = await getUserFromUid(uid)
 
         if (heartInitial !== undefined) {
             user.heartInitial = heartInitial

@@ -130,11 +130,11 @@
             color: white;
         }
 
-        #edit-history-dialog {
+        #edit-history-dialog, #edit-ranks-dialog {
             width: 50%;
         }
 
-        #edit-history-dialog-text {
+        #edit-history-dialog-text, #edit-ranks-dialog-text {
             width: 100%;
             height: 16em;
         }
@@ -185,8 +185,6 @@
     <dialog id="edit-const-dialog">
         <h1>编辑常数</h1>
         <div style="text-align: right;">
-            获取奖励的爱心最低要求（未满足的用户所在行将显示为灰色，设为 -1 禁用此功能）：<input id="edit-const-dialog-minimum-heart" type="text" /><br>
-            绿宝石奖励总数（满足条件的用户将获得至少 1 绿宝石，剩余绿宝石按爱心比例分配）：<input id="edit-const-dialog-emerald-amount" type="text" /><br>
             本轮活动截止日期（到达该天零点后自动停止计数，请及时将排名图片保存到本地）：<input id="edit-const-dialog-enddate" type="text"
                 placeholder="yyyy-mm-dd" /><br>
             图片底部时间戳伪造（留空则使用真实时间）：<input id="edit-const-dialog-timestamp" type="text"
@@ -203,6 +201,12 @@
         <button type="button" onclick="confirmEditHistory()" class="primary">确定</button>
         <button type="button" onclick="editHistoryDialog.open = false">取消</button>
     </dialog>
+    <dialog id="edit-ranks-dialog">
+        <h1>编辑段位</h1>
+        <textarea id="edit-ranks-dialog-text"></textarea><br>
+        <button type="button" onclick="confirmEditRanks()" class="primary">确定</button>
+        <button type="button" onclick="editRanksDialog.open = false">取消</button>
+    </dialog>
     <div class="card" id="manage">
         <h1>管理</h1>
         <div id="logged-out">
@@ -215,7 +219,8 @@
             <p>欢迎您，问答大区版主，<a href="#" onclick="logout()">点此登出</a>。</p>
             <button type="button" onclick="editConst()" class="primary">编辑常数</button>
             <button type="button" onclick="editHistory()" class="primary">编辑历史</button>
-            <button type="button" onclick="toggleShowingRankImage()" class="primary">切换统计表显示状态</button><br>
+            <button type="button" onclick="editRanks()" class="primary">编辑段位</button>
+            <button type="button" onclick="toggleShowingRankImage()" class="primary">切换显示状态</button><br>
             <button type="button" onclick="addUser()" class="primary">添加用户</button>
             <button type="button" onclick="batchAddUser()" class="primary">批量添加用户</button>
             <button type="button" onclick="delAllUsers()" class="warning">清空比赛列表</button>
@@ -253,21 +258,23 @@
         // Constants
         const url = '%{serverUrl}%' // This will be replaced by server side.
         const api = {
-            getRankImage: 'api/get-rank-image',
+            addUser: 'api/add-user',
+            delAllUsers: 'api/del-all-users',
+            delUser: 'api/del-user',
+            editConsts: 'api/edit-consts',
+            editHistory: 'api/edit-history',
+            editRanks: 'api/edit-ranks',
+            editUser: 'api/edit-user',
+            getConsts: 'api/get-consts',
+            getHistory: 'api/get-history',
             getIncreaseImage: 'api/get-increase-image',
+            getRankImage: 'api/get-rank-image',
+            getRanks: 'api/get-ranks',
             getRegistrationBBCode: 'api/get-registration-bbcode',
             getUsers: 'api/get-users',
             login: 'api/login',
-            addUser: 'api/add-user',
-            editUser: 'api/edit-user',
-            delAllUsers: 'api/del-all-users',
-            delUser: 'api/del-user',
             toggleShowingRankImage: 'api/toggle-showing-rank-image',
-            editConsts: 'api/edit-consts',
-            getConsts: 'api/get-consts',
-            updateCounter: 'api/update-counter',
-            getHistory: 'api/get-history',
-            editHistory: 'api/edit-history'
+            updateCounter: 'api/update-counter'
         }
 
         // Get elements
@@ -293,20 +300,20 @@
         const editUserDialogBanned = document.getElementById('edit-user-dialog-banned')
         const usersTable = document.getElementById('users')
         const editConstDialog = document.getElementById('edit-const-dialog')
-        const editConstDialogMinimumHeart = document.getElementById('edit-const-dialog-minimum-heart')
-        const editConstDialogEmeraldAmount = document.getElementById('edit-const-dialog-emerald-amount')
         const editConstDialogInterval = document.getElementById('edit-const-dialog-interval')
         const editConstDialogSleep = document.getElementById('edit-const-dialog-sleep')
         const editConstDialogEnddate = document.getElementById('edit-const-dialog-enddate')
         const editConstDialogTimestamp = document.getElementById('edit-const-dialog-timestamp')
         const editHistoryDialog = document.getElementById('edit-history-dialog')
         const editHistoryDialogText = document.getElementById('edit-history-dialog-text')
+        const editRanksDialog = document.getElementById('edit-ranks-dialog')
+        const editRanksDialogText = document.getElementById('edit-ranks-dialog-text')
 
         // Other data
         let users
 
         // Set BBCodes
-        rankImageBBCode.innerHTML = `[img=550,340]${url}/${api.getRankImage}[/img]`
+        rankImageBBCode.innerHTML = `[img]${url}/${api.getRankImage}[/img]`
         // increaseImageBBCode.innerHTML = `[img=400,432]${url}/${api.getIncreaseImage}[/img]`
 
         // Auto login
@@ -360,6 +367,7 @@
             if (updateAll) {
                 await getConsts()
                 await getHistory()
+                await getRanks()
             }
         }
 
@@ -413,8 +421,6 @@
             const result = JSON.parse(await request('GET', api.getConsts))
             editConstDialogSleep.value = result.sleep
             editConstDialogInterval.value = result.interval
-            editConstDialogMinimumHeart.value = result.minimumHeart
-            editConstDialogEmeraldAmount.value = result.emeraldAmount
             editConstDialogEnddate.value = result.endDate
             editConstDialogTimestamp.value = result.timestamp
         }
@@ -422,6 +428,11 @@
         async function getHistory() {
             const result = JSON.parse(await request('GET', api.getHistory))
             editHistoryDialogText.value = JSON.stringify(result, undefined, 4)
+        }
+
+        async function getRanks() {
+            const result = JSON.parse(await request('GET', api.getRanks))
+            editRanksDialogText.value = JSON.stringify(result, undefined, 4)
         }
 
         async function toggleShowingRankImage() {
@@ -508,8 +519,9 @@
                 alert('截止日期必须采用形如 yyyy-mm-dd 的结构')
                 return
             }
-            const response = await request('POST', api.editConsts, `password=${password.value}&minimumHeart=${editConstDialogMinimumHeart.value
-                }&emeraldAmount=${editConstDialogEmeraldAmount.value}&endDate=${editConstDialogEnddate.value}&timestamp=${editConstDialogTimestamp.value}`)
+            const response = await request('POST', api.editConsts,
+                `password=${password.value}&endDate=${editConstDialogEnddate.value}&timestamp=${editConstDialogTimestamp.value}`
+            )
             await updateAll()
             if (response === 'S') {
                 editConstDialog.open = false
@@ -523,12 +535,26 @@
         }
 
         async function confirmEditHistory() {
-            const response = await request('POST', api.editHistory, `password=${password.value}&value=${JSON.stringify(JSON.parse(editHistoryDialogText.value))}`)
+            const response = await request('POST', api.editHistory, `password=${password.value}&value=${encodeURIComponent(JSON.stringify(JSON.parse(editHistoryDialogText.value)))}`)
             await updateAll()
             if (response === 'S') {
                 editHistoryDialog.open = false
             } else {
                 alert(`编辑历史时出现错误: ${response}`)
+            }
+        }
+
+        function editRanks() {
+            editRanksDialog.open = true
+        }
+
+        async function confirmEditRanks() {
+            const response = await request('POST', api.editRanks, `password=${password.value}&value=${encodeURIComponent(JSON.stringify(JSON.parse(editRanksDialogText.value)))}`)
+            await updateAll()
+            if (response === 'S') {
+                editRanksDialog.open = false
+            } else {
+                alert(`编辑段位时出现错误: ${response}`)
             }
         }
 

@@ -1,5 +1,6 @@
 import * as fs from 'fs-extra'
 import * as path from 'path'
+import rp = require('request-promise-native')
 
 export interface Config {
     password: string,
@@ -7,13 +8,9 @@ export interface Config {
     sleep: number,
     port: number,
     host: string,
+    ranks: Rank[]
     protocol: string,
-    minimumHeart: number,
-    emeraldAmount: number,
     endDate: string,
-    // welfareMinimumHeart: number,
-    // welfareEmeraldPerUser: number,
-    // welfareAmount: number,
     keyFile?: string,
     certFile?: string
 }
@@ -32,7 +29,30 @@ export interface Users {
     [uid: number]: User
 }
 
-export interface RankElement {
+export interface Rank {
+    /**
+     * The name of the rank.
+     */
+    name: string,
+    /**
+     * A URI to the rank's icon.
+     */
+    icon?: string,
+    /**
+     * The amount of required hearts for this rank.
+     */
+    heart: number,
+    /**
+     * The amount of rewarded emeralds for this rank.
+     */
+    emerald: number,
+    /**
+     * The available amount of this rank.
+     */
+    amount: number
+}
+
+export interface SortedUser {
     uid: number,
     heart: number,
     lastChanged: number
@@ -153,6 +173,52 @@ export class Logger {
 
 export const logger = new Logger()
 
+export async function getUserFromUid(uid: number, oldUser?: User): Promise<User> {
+    try {
+        const data: { Variables: { space: { username: string, extcredits7: number } } } = JSON.parse(
+            await rp(`https://www.mcbbs.net/api/mobile/index.php?module=profile&uid=${uid}`)
+        )
+        const { username, extcredits7: heartPresent } = data.Variables.space
+
+        if (!oldUser) {
+            oldUser = {
+                banned: false,
+                heartAbandoned: 0,
+                heartInitial: heartPresent,
+                heartAttained: NaN, // Won't be inherited.
+                heartPresent: NaN, // Won't be inherited.
+                lastChanged: new Date().getTime(),
+                username: '' // Won't be inherited.
+            }
+        }
+
+        const ans = {
+            ...oldUser,
+            heartPresent: heartPresent,
+            heartAttained: heartPresent - oldUser.heartInitial - oldUser.heartAbandoned,
+            username: username
+        }
+
+        if (
+            oldUser.username !== ans.username ||
+            oldUser.heartAttained !== ans.heartAttained ||
+            oldUser.heartPresent !== ans.heartPresent
+        ) {
+            ans.lastChanged = new Date().getTime()
+            const { diffBefore, diffAfter } = getDifference(oldUser, ans)
+            logger.info('User', `- ${uid}: ${JSON.stringify(diffBefore)}.`)
+            logger.info('User', `+ ${uid}: ${JSON.stringify(diffAfter)}.`)
+        }
+
+        return ans
+    } catch {
+        throw `Invalid user page for ${uid}.`
+    }
+}
+
+/**
+ * @deprecated Use `getUserFromUid` instead.
+ */
 export function getUserViaWebCode(webCode: string, uid: number, oldUser?: User): User {
     try {
         const username = getStringBetweenStrings(webCode, '<title>', '的个人资料 -  Minecraft(我的世界)中文论坛 - </title>')
@@ -221,7 +287,7 @@ export function sleep(ms: number) {
 }
 
 export function getDifference<T extends object, U extends T>(before: T, after: T): { diffBefore: U, diffAfter: U } {
-    const ans= { diffBefore: {}, diffAfter: {} } as any
+    const ans = { diffBefore: {}, diffAfter: {} } as any
     for (const key in before) {
         if (before.hasOwnProperty(key)) {
             if (before[key] !== after[key]) {
