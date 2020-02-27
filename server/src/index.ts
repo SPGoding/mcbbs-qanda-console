@@ -17,7 +17,7 @@ let config: Config = { password: '', interval: NaN, sleep: NaN, protocol: 'http'
 let ranks: Rank[] = []
 let users: Users = {}
 let history: History = {}
-let sortedUsers: SortedUser[]
+let sortedUsers: SortedUser[] = []
 let counter: Counter = {}
 
 let rankTable: string
