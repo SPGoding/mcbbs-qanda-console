@@ -238,6 +238,7 @@ async function requestListener(req: http.IncomingMessage, res: http.ServerRespon
                         logger.info('Ranks', `- ${JSON.stringify(ranks)}.`, `+ ${commingValue}.`)
                         ranks = JSON.parse(commingValue)
                         await writeConfig('ranks.json', ranks)
+                        rankTable = getRankTableSvg()
                         res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' })
                         res.end('S')
                     } catch (e) {
