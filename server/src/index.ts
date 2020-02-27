@@ -479,7 +479,7 @@ async function getBase64FromUri(uri: string): Promise<string> {
                 base64Map.set(uri, base64)
                 resolve(base64)
             } else {
-                reject({ error, statusCode: response.statusCode })
+                reject({ error, statusCode: response ? response.statusCode : -1 })
             }
         })
     })
