@@ -10,6 +10,8 @@ import {
     History, Users, loadConfig, Config, SortedUser, writeConfig,
     getBBCodeOfTable, Table, Row, sleep, Counter, logger, getDifference, getUserFromUid, Rank
 } from './utils'
+import rp = require('request-promise-native')
+import request = require('request')
 
 let config: Config = { password: '', interval: NaN, sleep: NaN, protocol: 'http', host: '', port: NaN, ranks: [], endDate: '' }
 let ranks: Rank[] = []
@@ -173,7 +175,7 @@ async function requestListener(req: http.IncomingMessage, res: http.ServerRespon
             const data = await handlePost(req, res)
             if (data.password && md5(data.password.toString()) === config.password) {
                 stopShowingRankTable = !stopShowingRankTable
-                rankTable = getRankTableSvg()
+                rankTable = await getRankTableSvg()
                 res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' })
                 res.end('S')
             } else {
@@ -193,7 +195,7 @@ async function requestListener(req: http.IncomingMessage, res: http.ServerRespon
                     config.endDate = commingEndDate
                     fakeUpdateTimeInfo = commingTimestamp
                     await writeConfig<Config>('config.json', config)
-                    rankTable = getRankTableSvg()
+                    rankTable = await getRankTableSvg()
                     res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' })
                     res.end('S')
                 } else {
@@ -238,7 +240,7 @@ async function requestListener(req: http.IncomingMessage, res: http.ServerRespon
                         logger.info('Ranks', `- ${JSON.stringify(ranks)}.`, `+ ${commingValue}.`)
                         ranks = JSON.parse(commingValue)
                         await writeConfig('ranks.json', ranks)
-                        rankTable = getRankTableSvg()
+                        rankTable = await getRankTableSvg()
                         res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' })
                         res.end('S')
                     } catch (e) {
@@ -393,14 +395,14 @@ async function updateInfo(toUpdateUserInfo = true) {
     if (!lastUpdateTime) {
         lastUpdateTime = new Date()
     }
-    sortedUsers.forEach(v => {
+    sortedUsers.forEach(async v => {
         const day = getTime(false)
         if (history[day] === undefined) {
             // The first fetch of `day`.
             logger
                 .info('RANK', `=== ${day} 00:00 ===`)
                 .indent()
-            for (const row of getRankTable()) {
+            for (const row of await getRankTable()) {
                 logger.info('RANK', '| ' + row.join(' | ') + ' |')
             }
             logger.indent(-1)
@@ -412,7 +414,7 @@ async function updateInfo(toUpdateUserInfo = true) {
     })
     writeConfig('history.json', history)
     if (!freeze) {
-        rankTable = getRankTableSvg()
+        rankTable = await getRankTableSvg()
         // increaseImage = await drawIncreaseImage()
         registrationBBCode = getRegistrationBBCode()
     }
@@ -464,7 +466,26 @@ function getTime(toMinutes = true) {
     }
 }
 
-function getRankTable() {
+const base64Map = new Map<string, string>()
+
+async function getBase64FromUri(uri: string): Promise<string> {
+    return new Promise<string>((resolve, reject) => {
+        if (base64Map.has(uri)) {
+            resolve(base64Map.get(uri))
+        }
+        request.defaults({ encoding: null }).get(uri, (error, response, body) => {
+            if (!error && response.statusCode == 200) {
+                const base64 = `data:${response.headers['content-type']};base64,${Buffer.from(body).toString('base64')}`
+                base64Map.set(uri, base64)
+                resolve(base64)
+            } else {
+                reject({ error, statusCode: response.statusCode })
+            }
+        })
+    })
+}
+
+async function getRankTable() {
     const table: Table = [
         ['段位', '用户名', '已获爱心']
     ]
@@ -475,7 +496,11 @@ function getRankTable() {
                 if (--rank.amount <= 0) {
                     remainingRanks.splice(remainingRanks.indexOf(rank), 1)
                 }
-                table.push([rank.icon ? `<img src="${rank.icon}" alt="${rank.name}" title="${rank.name}"></img>` : rank.name, users[user.uid].username, user.heart])
+                try {
+                    table.push([rank.icon ? `<img src="${await getBase64FromUri(rank.icon)}" alt="${rank.name}" title="${rank.name}"></img>` : rank.name, users[user.uid].username, user.heart])
+                } catch {
+                    table.push([rank.name, users[user.uid].username, user.heart])
+                }
                 break
             } else {
                 // It's impossible for users after this one to meet this rank's requirement.
@@ -488,7 +513,7 @@ function getRankTable() {
     return table
 }
 
-function getRankTableSvg() {
+async function getRankTableSvg() {
     const width = 530
     const primaryBackColor = '#fcf1da'
     const titleBackColor = '#ffbf00'
@@ -553,7 +578,7 @@ img {
         const tablePrefix = '<table>'
         const tableSuffix = '</table>'
 
-        const table = getRankTable()
+        const table = await getRankTable()
 
         // Output table HTML.
         const rows: string[] = []
