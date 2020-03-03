@@ -395,19 +395,19 @@ async function updateInfo(toUpdateUserInfo = true) {
     if (!lastUpdateTime) {
         lastUpdateTime = new Date()
     }
-    sortedUsers.forEach(async v => {
-        const day = getTime(false)
-        if (history[day] === undefined) {
-            // The first fetch of `day`.
-            logger
-                .info('RANK', `=== ${day} 00:00 ===`)
-                .indent()
-            for (const row of await getRankTable()) {
-                logger.info('RANK', '| ' + row.join(' | ') + ' |')
-            }
-            logger.indent(-1)
-            history[day] = {}
+    const day = getTime(false)
+    if (history[day] === undefined) {
+        // The first fetch of `day`.
+        logger
+            .info('RANK', `=== ${day} 00:00 ===`)
+            .indent()
+        for (const row of await getRankTable()) {
+            logger.info('RANK', '| ' + row.slice(1).join(' | ') + ' |')
         }
+        logger.indent(-1)
+        history[day] = {}
+    }
+    sortedUsers.forEach(async v => {
         if (history[day][v.uid] === undefined) {
             history[day][v.uid] = v.heart
         }
