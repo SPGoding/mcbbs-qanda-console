@@ -491,9 +491,9 @@ async function getRankTable() {
     ]
     const remainingRanks: Rank[] = JSON.parse(JSON.stringify(ranks))
     for (const user of sortedUsers) {
-        for (let i = 0; i < remainingRanks.length; i++) {
-            const rank = remainingRanks[i]
+        for (const rank of remainingRanks) {
             if (rank.amount > 0 && user.heart > rank.heart) {
+                rank.amount--
                 try {
                     table.push([rank.icon ? `<img src="${await getBase64FromUri(rank.icon)}" alt="${rank.name}" title="${rank.name}"></img>` : rank.name, users[user.uid].username, user.heart])
                 } catch {
