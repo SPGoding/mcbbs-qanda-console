@@ -494,19 +494,12 @@ async function getRankTable() {
         for (let i = 0; i < remainingRanks.length; i++) {
             const rank = remainingRanks[i]
             if (rank.amount > 0 && user.heart > rank.heart) {
-                if (--rank.amount <= 0) {
-                    i++
-                }
                 try {
                     table.push([rank.icon ? `<img src="${await getBase64FromUri(rank.icon)}" alt="${rank.name}" title="${rank.name}"></img>` : rank.name, users[user.uid].username, user.heart])
                 } catch {
                     table.push([rank.name, users[user.uid].username, user.heart])
                 }
                 break
-            } else {
-                // It's impossible for users after this one to meet this rank's requirement.
-                // Therefore, remove this rank.
-                i++
             }
         }
     }
