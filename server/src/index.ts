@@ -491,10 +491,11 @@ async function getRankTable() {
     ]
     const remainingRanks: Rank[] = JSON.parse(JSON.stringify(ranks))
     for (const user of sortedUsers) {
-        for (const rank of remainingRanks) {
+        for (let i = 0; i < remainingRanks.length; i++) {
+            const rank = remainingRanks[i]
             if (rank.amount > 0 && user.heart > rank.heart) {
                 if (--rank.amount <= 0) {
-                    remainingRanks.splice(remainingRanks.indexOf(rank), 1)
+                    i++
                 }
                 try {
                     table.push([rank.icon ? `<img src="${await getBase64FromUri(rank.icon)}" alt="${rank.name}" title="${rank.name}"></img>` : rank.name, users[user.uid].username, user.heart])
@@ -505,7 +506,7 @@ async function getRankTable() {
             } else {
                 // It's impossible for users after this one to meet this rank's requirement.
                 // Therefore, remove this rank.
-                remainingRanks.splice(remainingRanks.indexOf(rank), 1)
+                i++
             }
         }
     }
