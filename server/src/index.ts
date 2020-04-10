@@ -13,7 +13,7 @@ import {
 import rp = require('request-promise-native')
 import request = require('request')
 
-let config: Config = { password: '', interval: NaN, sleep: NaN, protocol: 'http', host: '', port: NaN, ranks: [], endDate: '' }
+let config: Config = { password: '', interval: NaN, sleep: NaN, protocol: 'http', host: '', port: NaN, externalLink: '', ranks: [], endDate: '' }
 let ranks: Rank[] = []
 let users: Users = {}
 let history: History = {}
@@ -81,7 +81,7 @@ async function requestListener(req: http.IncomingMessage, res: http.ServerRespon
         } else {
             const filePath = path.join(__dirname, '../../client', 'index.html')
             let content = await fs.readFile(filePath, 'utf8')
-            content = content.replace(/%\{serverUrl}%/g, `${config.protocol}://${config.host}:${config.port}`)
+            content = content.replace(/%\{serverUrl}%/g, `${config.protocol}://${config.externalLink}`)
             res.writeHead(200, { 'Content-Type': `text/html; charset=utf-8` })
             res.end(content)
         }
@@ -268,7 +268,7 @@ async function startup() {
         config = await loadConfig<Config>('config.json',
             {
                 password: '', sleep: 500, interval: 600000, port: 80, host: '',
-                protocol: 'http', ranks: [], endDate: '1970-01-01'
+                protocol: 'http', externalLink: '', ranks: [], endDate: '1970-01-01'
             }
         )
         users = await loadConfig('users.json', {})
@@ -304,7 +304,7 @@ async function startup() {
 
         await updateInfo()
 
-        logger.dbug(`Server is running at ${config.protocol}://${config.host}:${config.port}.`)
+        logger.dbug(`Server is running at ${config.protocol}://${config.host}:${config.port} (internally) and ${config.protocol}://${config.externalLink} (externally).`)
     } catch (e) {
         logger.eror(e)
     }

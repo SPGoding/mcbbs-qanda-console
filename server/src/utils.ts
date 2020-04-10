@@ -11,6 +11,7 @@ export interface Config {
     ranks: Rank[]
     protocol: string,
     endDate: string,
+    externalLink: string,
     keyFile?: string,
     certFile?: string
 }
