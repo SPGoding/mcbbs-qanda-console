@@ -212,8 +212,8 @@ export async function getUserFromUid(uid: number, oldUser?: User): Promise<User>
         }
 
         return ans
-    } catch {
-        throw `Invalid user page for ${uid}.`
+    } catch (e) {
+        throw `${uid}: ${e}`
     }
 }
 
